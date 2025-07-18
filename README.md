@@ -2,7 +2,7 @@
 
 [![Version](https://img.shields.io/badge/version-1.0-blue.svg)](https://github.com/Anonventions/GlobalPost/releases)
 [![Minecraft](https://img.shields.io/badge/minecraft-1.20.1-green.svg)](https://www.minecraft.net/)
-[![License](https://img.shields.io/badge/license-MIT-yellow.svg)](LICENSE)
+[![License](https://img.shields.io/badge/license-Private-yellow.svg)](LICENSE)
 [![Java](https://img.shields.io/badge/java-17+-orange.svg)](https://www.oracle.com/java/)
 
 A comprehensive cross-server mailbox system for Minecraft servers running under a Velocity proxy. Send items between servers with ease!
