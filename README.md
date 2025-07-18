@@ -355,7 +355,7 @@ If you encounter any issues:
 
 ## 📄 License
 
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+This project is licensed under the PRIVATE License - all rights to it are preserved and cannot be redistributed without permission!
 
 ## 🙏 Credits
 
