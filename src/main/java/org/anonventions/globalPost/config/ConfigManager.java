@@ -99,6 +99,12 @@ public class ConfigManager {
         config.addDefault("gui.mailbox.send_mail_button.name", "§aSend Mail");
         config.addDefault("gui.mailbox.send_mail_button.lore", Arrays.asList("§7Click to send mail to another server"));
         
+        // Border item defaults for mailbox
+        config.addDefault("gui.mailbox.border_item.material", "GRAY_STAINED_GLASS_PANE");
+        config.addDefault("gui.mailbox.border_item.custom_model_data", 0);
+        config.addDefault("gui.mailbox.border_item.name", " ");
+        config.addDefault("gui.mailbox.border_item.lore", Arrays.asList());
+        
         // GUI defaults for sendmail
         config.addDefault("gui.sendmail.title", "§6§lSend Mail to {recipient}");
         config.addDefault("gui.sendmail.player_head_slot", 4);
@@ -126,6 +132,12 @@ public class ConfigManager {
         config.addDefault("gui.sendmail.cancel_button.custom_model_data", 0);
         config.addDefault("gui.sendmail.cancel_button.name", "§c§lCancel");
         config.addDefault("gui.sendmail.cancel_button.lore", Arrays.asList("§7Click to cancel and return items"));
+        
+        // Border item defaults for sendmail
+        config.addDefault("gui.sendmail.border_item.material", "GRAY_STAINED_GLASS_PANE");
+        config.addDefault("gui.sendmail.border_item.custom_model_data", 0);
+        config.addDefault("gui.sendmail.border_item.name", " ");
+        config.addDefault("gui.sendmail.border_item.lore", Arrays.asList());
 
         // Message system defaults
         config.addDefault("messages.enabled", true);
@@ -225,6 +237,12 @@ public class ConfigManager {
     public String getSendMailButtonName()     { return config.getString("gui.mailbox.send_mail_button.name"); }
     public List<String> getSendMailButtonLore() { return config.getStringList("gui.mailbox.send_mail_button.lore"); }
     
+    // Border item customization
+    public String getBorderItemMaterial()      { return config.getString("gui.mailbox.border_item.material"); }
+    public int getBorderItemCustomModelData()  { return config.getInt("gui.mailbox.border_item.custom_model_data"); }
+    public String getBorderItemName()          { return config.getString("gui.mailbox.border_item.name"); }
+    public List<String> getBorderItemLore()    { return config.getStringList("gui.mailbox.border_item.lore"); }
+    
     public String getSendMailTitle()          { return config.getString("gui.sendmail.title"); }
     public int getSendMailPlayerHeadSlot()    { return config.getInt("gui.sendmail.player_head_slot"); }
     public List<Integer> getSendMailContentSlots() { return config.getIntegerList("gui.sendmail.content_slots"); }
@@ -247,6 +265,12 @@ public class ConfigManager {
     public int getCancelButtonCustomModelData() { return config.getInt("gui.sendmail.cancel_button.custom_model_data"); }
     public String getCancelButtonName()       { return config.getString("gui.sendmail.cancel_button.name"); }
     public List<String> getCancelButtonLore() { return config.getStringList("gui.sendmail.cancel_button.lore"); }
+    
+    // SendMail border item customization
+    public String getSendMailBorderItemMaterial() { return config.getString("gui.sendmail.border_item.material"); }
+    public int getSendMailBorderItemCustomModelData() { return config.getInt("gui.sendmail.border_item.custom_model_data"); }
+    public String getSendMailBorderItemName()   { return config.getString("gui.sendmail.border_item.name"); }
+    public List<String> getSendMailBorderItemLore() { return config.getStringList("gui.sendmail.border_item.lore"); }
     
     /* Message system getters -----------------------------------------------*/
     public boolean isMessagingEnabled()       { return config.getBoolean("messages.enabled"); }

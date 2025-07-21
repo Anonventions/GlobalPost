@@ -66,12 +66,19 @@ public class MailboxGUI implements Listener {
     }
     
     private void setupBorder() {
-        ItemStack border = new ItemStack(Material.GRAY_STAINED_GLASS_PANE);
-        ItemMeta meta = border.getItemMeta();
-        if (meta != null) {
-            meta.setDisplayName(" ");
-            border.setItemMeta(meta);
+        String borderMaterial = plugin.getConfigManager().getBorderItemMaterial();
+        
+        // Skip border if material is AIR (invisible borders)
+        if ("AIR".equalsIgnoreCase(borderMaterial)) {
+            return;
         }
+        
+        ItemStack border = ItemBuilder.createItem(
+            borderMaterial,
+            plugin.getConfigManager().getBorderItemCustomModelData(),
+            plugin.getConfigManager().getBorderItemName(),
+            plugin.getConfigManager().getBorderItemLore()
+        );
         
         // Set border items (slots 0-8, 9, 17, 18, 26, 27, 35, 36, 44, 45-53)
         for (int i = 0; i < 54; i++) {

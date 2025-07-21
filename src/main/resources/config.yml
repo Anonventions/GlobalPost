@@ -103,6 +103,12 @@ gui:
       name: "§aSend Mail"
       lore:
         - "§7Click to send mail to another server"
+    # Border customization
+    border_item:
+      material: "GRAY_STAINED_GLASS_PANE"  # Use "AIR" for invisible borders
+      custom_model_data: 0
+      name: " "
+      lore: []
     no_mail_item:
       material: "BARRIER"
       custom_model_data: 0
@@ -141,6 +147,12 @@ gui:
       name: "§c§lCancel"
       lore:
         - "§7Click to cancel and return items"
+    # Border customization
+    border_item:
+      material: "GRAY_STAINED_GLASS_PANE"  # Use "AIR" for invisible borders
+      custom_model_data: 0
+      name: " "
+      lore: []
 
 # Message system
 messages:

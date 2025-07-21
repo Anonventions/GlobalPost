@@ -55,12 +55,19 @@ public class SendMailGUI implements Listener {
     }
     
     private void setupBorder() {
-        ItemStack border = new ItemStack(Material.GRAY_STAINED_GLASS_PANE);
-        ItemMeta meta = border.getItemMeta();
-        if (meta != null) {
-            meta.setDisplayName(" ");
-            border.setItemMeta(meta);
+        String borderMaterial = plugin.getConfigManager().getSendMailBorderItemMaterial();
+        
+        // Skip border if material is AIR (invisible borders)
+        if ("AIR".equalsIgnoreCase(borderMaterial)) {
+            return;
         }
+        
+        ItemStack border = ItemBuilder.createItem(
+            borderMaterial,
+            plugin.getConfigManager().getSendMailBorderItemCustomModelData(),
+            plugin.getConfigManager().getSendMailBorderItemName(),
+            plugin.getConfigManager().getSendMailBorderItemLore()
+        );
         
         // Set border items
         for (int i = 0; i < 54; i++) {
