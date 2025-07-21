@@ -33,7 +33,7 @@ public class SendMailGUI implements Listener {
         this.destinationServer = destinationServer;
         this.recipientName = recipientName;
         
-        String title = plugin.getConfigManager().getMailboxTitle().replace("{recipient}", recipientName);
+        String title = plugin.getConfigManager().getSendMailTitle().replace("{recipient}", recipientName);
         this.inventory = Bukkit.createInventory(null, 54, title);
 
         plugin.getServer().getPluginManager().registerEvents(this, plugin);
@@ -55,19 +55,24 @@ public class SendMailGUI implements Listener {
     }
     
     private void setupBorder() {
-        ItemStack border = ItemBuilder.createItem(
-            plugin.getConfigManager().getBorderMaterial(),
-            plugin.getConfigManager().getBorderCustomModelData(),
-            plugin.getConfigManager().getBorderName(),
-            plugin.getConfigManager().getBorderLore()
-        );
+        ItemStack border = new ItemStack(Material.GRAY_STAINED_GLASS_PANE);
+        ItemMeta meta = border.getItemMeta();
+        if (meta != null) {
+            meta.setDisplayName(" ");
+            border.setItemMeta(meta);
+        }
         
         // Set border items
         for (int i = 0; i < 54; i++) {
             if (i < 9 || i >= 45 || i % 9 == 0 || i % 9 == 8) {
                 // Skip content slots and special button slots
-                List<Integer> contentSlots = plugin.getConfigManager().getContentSlots();
-                if (!contentSlots.contains(i) && i != 4 && i != 45 && i != 48 && i != 49) {
+                List<Integer> contentSlots = plugin.getConfigManager().getSendMailContentSlots();
+                if (!contentSlots.contains(i) && 
+                    i != plugin.getConfigManager().getSendMailPlayerHeadSlot() && 
+                    i != plugin.getConfigManager().getCancelButtonSlot() && 
+                    i != plugin.getConfigManager().getSendButtonSlot() && 
+                    i != plugin.getConfigManager().getMessageButtonSlot() &&
+                    i != 53) { // info slot
                     inventory.setItem(i, border);
                 }
             }
@@ -85,7 +90,7 @@ public class SendMailGUI implements Listener {
             playerHead.setItemMeta(meta);
         }
         
-        inventory.setItem(plugin.getConfigManager().getPlayerHeadSlot(), playerHead);
+        inventory.setItem(plugin.getConfigManager().getSendMailPlayerHeadSlot(), playerHead);
     }
     
     private void setupControlButtons() {
@@ -96,8 +101,14 @@ public class SendMailGUI implements Listener {
             "",
             "§aClick to send!"
         );
-        ItemStack sendButton = ItemBuilder.createItem("GREEN_WOOL", 0, "§a§lSend Mail", sendLore);
-        inventory.setItem(48, sendButton);
+        ItemStack sendButton = new ItemStack(Material.GREEN_WOOL);
+        ItemMeta sendMeta = sendButton.getItemMeta();
+        if (sendMeta != null) {
+            sendMeta.setDisplayName("§a§lSend Mail");
+            sendMeta.setLore(sendLore);
+            sendButton.setItemMeta(sendMeta);
+        }
+        inventory.setItem(plugin.getConfigManager().getSendButtonSlot(), sendButton);
         
         // Message button
         if (plugin.getConfigManager().isMessagingEnabled()) {
@@ -107,14 +118,25 @@ public class SendMailGUI implements Listener {
                 "",
                 mailMessage != null ? "§aMessage: §f" + mailMessage : "§7No message set"
             );
-            ItemStack messageButton = ItemBuilder.createItem("WRITABLE_BOOK", 0, "§e§lAdd Message", messageLore);
-            inventory.setItem(49, messageButton);
+            ItemStack messageButton = new ItemStack(Material.WRITABLE_BOOK);
+            ItemMeta messageMeta = messageButton.getItemMeta();
+            if (messageMeta != null) {
+                messageMeta.setDisplayName("§e§lAdd Message");
+                messageMeta.setLore(messageLore);
+                messageButton.setItemMeta(messageMeta);
+            }
+            inventory.setItem(plugin.getConfigManager().getMessageButtonSlot(), messageButton);
         }
         
         // Cancel button
-        ItemStack cancelButton = ItemBuilder.createItem("RED_WOOL", 0, "§c§lCancel", 
-            List.of("§7Click to cancel and return items"));
-        inventory.setItem(45, cancelButton);
+        ItemStack cancelButton = new ItemStack(Material.RED_WOOL);
+        ItemMeta cancelMeta = cancelButton.getItemMeta();
+        if (cancelMeta != null) {
+            cancelMeta.setDisplayName("§c§lCancel");
+            cancelMeta.setLore(List.of("§7Click to cancel and return items"));
+            cancelButton.setItemMeta(cancelMeta);
+        }
+        inventory.setItem(plugin.getConfigManager().getCancelButtonSlot(), cancelButton);
     }
     
     private void setupInfoItem() {
@@ -124,7 +146,13 @@ public class SendMailGUI implements Listener {
             "",
             "§7Maximum items: §f" + plugin.getConfigManager().getMaxItemsPerMail()
         );
-        ItemStack info = ItemBuilder.createItem("BOOK", 0, "§6§lMail Information", infoLore);
+        ItemStack info = new ItemStack(Material.BOOK);
+        ItemMeta meta = info.getItemMeta();
+        if (meta != null) {
+            meta.setDisplayName("§6§lMail Information");
+            meta.setLore(infoLore);
+            info.setItemMeta(meta);
+        }
         inventory.setItem(53, info); // Put info item in a different slot
     }
 
@@ -143,7 +171,7 @@ public class SendMailGUI implements Listener {
         if (!clicker.equals(player)) return;
 
         int slot = event.getSlot();
-        List<Integer> contentSlots = plugin.getConfigManager().getContentSlots();
+        List<Integer> contentSlots = plugin.getConfigManager().getSendMailContentSlots();
 
         // Allow placing items in the mail area (content slots)
         if (contentSlots.contains(slot)) {
@@ -177,12 +205,12 @@ public class SendMailGUI implements Listener {
 
         event.setCancelled(true);
 
-        if (slot == 48) { // Send button
+        if (slot == plugin.getConfigManager().getSendButtonSlot()) { // Send button
             if (!isProcessing) {
                 isProcessing = true;
                 sendMail();
             }
-        } else if (slot == 49 && plugin.getConfigManager().isMessagingEnabled()) { // Message button
+        } else if (slot == plugin.getConfigManager().getMessageButtonSlot() && plugin.getConfigManager().isMessagingEnabled()) { // Message button
             if (!plugin.getMessageInputHandler().isInputtingMessage(player)) {
                 player.closeInventory();
                 plugin.getMessageInputHandler().requestMessage(player, message -> {
@@ -194,7 +222,7 @@ public class SendMailGUI implements Listener {
                     });
                 });
             }
-        } else if (slot == 45) { // Cancel button
+        } else if (slot == plugin.getConfigManager().getCancelButtonSlot()) { // Cancel button
             returnItems();
             player.closeInventory();
         }
@@ -216,7 +244,7 @@ public class SendMailGUI implements Listener {
 
     private void sendMail() {
         List<ItemStack> items = new ArrayList<>();
-        List<Integer> contentSlots = plugin.getConfigManager().getContentSlots();
+        List<Integer> contentSlots = plugin.getConfigManager().getSendMailContentSlots();
 
         // Collect items from mail slots
         for (int slot : contentSlots) {
@@ -306,7 +334,7 @@ public class SendMailGUI implements Listener {
     }
 
     private void returnItems() {
-        List<Integer> contentSlots = plugin.getConfigManager().getContentSlots();
+        List<Integer> contentSlots = plugin.getConfigManager().getSendMailContentSlots();
         for (int slot : contentSlots) {
             ItemStack item = inventory.getItem(slot);
             if (item != null && item.getType() != Material.AIR) {

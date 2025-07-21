@@ -66,12 +66,12 @@ public class MailboxGUI implements Listener {
     }
     
     private void setupBorder() {
-        ItemStack border = ItemBuilder.createItem(
-            plugin.getConfigManager().getBorderMaterial(),
-            plugin.getConfigManager().getBorderCustomModelData(),
-            plugin.getConfigManager().getBorderName(),
-            plugin.getConfigManager().getBorderLore()
-        );
+        ItemStack border = new ItemStack(Material.GRAY_STAINED_GLASS_PANE);
+        ItemMeta meta = border.getItemMeta();
+        if (meta != null) {
+            meta.setDisplayName(" ");
+            border.setItemMeta(meta);
+        }
         
         // Set border items (slots 0-8, 9, 17, 18, 26, 27, 35, 36, 44, 45-53)
         for (int i = 0; i < 54; i++) {
@@ -86,13 +86,13 @@ public class MailboxGUI implements Listener {
     
     private boolean isSpecialSlot(int slot) {
         List<Integer> contentSlots = plugin.getConfigManager().getContentSlots();
-        List<Integer> paginationSlots = plugin.getConfigManager().getPaginationSlots();
         
         return slot == plugin.getConfigManager().getPlayerHeadSlot() ||
                slot == plugin.getConfigManager().getRefreshSlot() ||
                slot == plugin.getConfigManager().getSendMailSlot() ||
-               contentSlots.contains(slot) ||
-               paginationSlots.contains(slot);
+               slot == plugin.getConfigManager().getPreviousPageSlot() ||
+               slot == plugin.getConfigManager().getNextPageSlot() ||
+               contentSlots.contains(slot);
     }
     
     private void setupPlayerHead() {
@@ -111,21 +111,23 @@ public class MailboxGUI implements Listener {
     
     private void setupNavigationItems() {
         // Refresh button
-        ItemStack refresh = ItemBuilder.createItem(
-            plugin.getConfigManager().getRefreshMaterial(),
-            plugin.getConfigManager().getRefreshCustomModelData(),
-            plugin.getConfigManager().getRefreshName(),
-            plugin.getConfigManager().getRefreshLore()
-        );
+        ItemStack refresh = new ItemStack(Material.COMPASS);
+        ItemMeta refreshMeta = refresh.getItemMeta();
+        if (refreshMeta != null) {
+            refreshMeta.setDisplayName("§bRefresh");
+            refreshMeta.setLore(List.of("§7Click to refresh your mailbox"));
+            refresh.setItemMeta(refreshMeta);
+        }
         inventory.setItem(plugin.getConfigManager().getRefreshSlot(), refresh);
         
         // Send mail button
-        ItemStack sendMail = ItemBuilder.createItem(
-            plugin.getConfigManager().getSendMailMaterial(),
-            plugin.getConfigManager().getSendMailCustomModelData(),
-            plugin.getConfigManager().getSendMailName(),
-            plugin.getConfigManager().getSendMailLore()
-        );
+        ItemStack sendMail = new ItemStack(Material.WRITABLE_BOOK);
+        ItemMeta sendMeta = sendMail.getItemMeta();
+        if (sendMeta != null) {
+            sendMeta.setDisplayName("§aSend Mail");
+            sendMeta.setLore(List.of("§7Click to send mail to another server"));
+            sendMail.setItemMeta(sendMeta);
+        }
         inventory.setItem(plugin.getConfigManager().getSendMailSlot(), sendMail);
     }
     
@@ -190,22 +192,37 @@ public class MailboxGUI implements Listener {
         
         // Previous page button
         if (pagination.hasPreviousPage()) {
-            ItemStack prevPage = ItemBuilder.createItem("ARROW", 0, "§7« Previous Page", 
-                List.of("§8Click to go to previous page", "§8Page " + (pagination.getCurrentPage()) + "/" + pagination.getTotalPages()));
-            inventory.setItem(46, prevPage);
+            ItemStack prevPage = new ItemStack(Material.ARROW);
+            ItemMeta meta = prevPage.getItemMeta();
+            if (meta != null) {
+                meta.setDisplayName("§7« Previous Page");
+                meta.setLore(List.of("§8Click to go to previous page", "§8Page " + (pagination.getCurrentPage()) + "/" + pagination.getTotalPages()));
+                prevPage.setItemMeta(meta);
+            }
+            inventory.setItem(plugin.getConfigManager().getPreviousPageSlot(), prevPage);
         }
         
         // Next page button
         if (pagination.hasNextPage()) {
-            ItemStack nextPage = ItemBuilder.createItem("ARROW", 0, "§7Next Page »", 
-                List.of("§8Click to go to next page", "§8Page " + (pagination.getCurrentPage() + 2) + "/" + pagination.getTotalPages()));
-            inventory.setItem(52, nextPage);
+            ItemStack nextPage = new ItemStack(Material.ARROW);
+            ItemMeta meta = nextPage.getItemMeta();
+            if (meta != null) {
+                meta.setDisplayName("§7Next Page »");
+                meta.setLore(List.of("§8Click to go to next page", "§8Page " + (pagination.getCurrentPage() + 2) + "/" + pagination.getTotalPages()));
+                nextPage.setItemMeta(meta);
+            }
+            inventory.setItem(plugin.getConfigManager().getNextPageSlot(), nextPage);
         }
         
-        // Page info
-        ItemStack pageInfo = ItemBuilder.createItem("BOOK", 0, "§6Page " + (pagination.getCurrentPage() + 1), 
-            List.of("§7Total pages: §f" + pagination.getTotalPages(), "§7Total mails: §f" + pagination.getTotalMails()));
-        inventory.setItem(49, pageInfo);
+        // Page info in title bar area
+        ItemStack pageInfo = new ItemStack(Material.BOOK);
+        ItemMeta meta = pageInfo.getItemMeta();
+        if (meta != null) {
+            meta.setDisplayName("§6Page " + (pagination.getCurrentPage() + 1));
+            meta.setLore(List.of("§7Total pages: §f" + pagination.getTotalPages(), "§7Total mails: §f" + pagination.getTotalMails()));
+            pageInfo.setItemMeta(meta);
+        }
+        inventory.setItem(13, pageInfo); // Top center slot for page info
     }
 
     public void open() {
@@ -243,13 +260,13 @@ public class MailboxGUI implements Listener {
         }
 
         // Handle pagination
-        if (slot == 46 && pagination.hasPreviousPage()) {
+        if (slot == plugin.getConfigManager().getPreviousPageSlot() && pagination.hasPreviousPage()) {
             pagination.previousPage();
             updateInventory();
             return;
         }
         
-        if (slot == 52 && pagination.hasNextPage()) {
+        if (slot == plugin.getConfigManager().getNextPageSlot() && pagination.hasNextPage()) {
             pagination.nextPage();
             updateInventory();
             return;
