@@ -111,23 +111,21 @@ public class MailboxGUI implements Listener {
     
     private void setupNavigationItems() {
         // Refresh button
-        ItemStack refresh = new ItemStack(Material.COMPASS);
-        ItemMeta refreshMeta = refresh.getItemMeta();
-        if (refreshMeta != null) {
-            refreshMeta.setDisplayName("§bRefresh");
-            refreshMeta.setLore(List.of("§7Click to refresh your mailbox"));
-            refresh.setItemMeta(refreshMeta);
-        }
+        ItemStack refresh = ItemBuilder.createItem(
+            plugin.getConfigManager().getRefreshButtonMaterial(),
+            plugin.getConfigManager().getRefreshButtonCustomModelData(),
+            plugin.getConfigManager().getRefreshButtonName(),
+            plugin.getConfigManager().getRefreshButtonLore()
+        );
         inventory.setItem(plugin.getConfigManager().getRefreshSlot(), refresh);
         
         // Send mail button
-        ItemStack sendMail = new ItemStack(Material.WRITABLE_BOOK);
-        ItemMeta sendMeta = sendMail.getItemMeta();
-        if (sendMeta != null) {
-            sendMeta.setDisplayName("§aSend Mail");
-            sendMeta.setLore(List.of("§7Click to send mail to another server"));
-            sendMail.setItemMeta(sendMeta);
-        }
+        ItemStack sendMail = ItemBuilder.createItem(
+            plugin.getConfigManager().getSendMailButtonMaterial(),
+            plugin.getConfigManager().getSendMailButtonCustomModelData(),
+            plugin.getConfigManager().getSendMailButtonName(),
+            plugin.getConfigManager().getSendMailButtonLore()
+        );
         inventory.setItem(plugin.getConfigManager().getSendMailSlot(), sendMail);
     }
     
@@ -155,26 +153,16 @@ public class MailboxGUI implements Listener {
         
         // Get mail item config from config.yml
         String name = ItemBuilder.replacePlaceholders(
-            "§6Mail from {sender}", 
+            plugin.getConfigManager().getMailItemName(), 
             mail.getSenderName(), 
             mail.getSourceServer(), 
             timeStr, 
             mail.getItems().size(), 
             message
-        );
-        
-        List<String> baseLore = List.of(
-            "§7From: §f{sender}",
-            "§7Server: §f{server}",
-            "§7Time: §f{time}",
-            "§7Items: §f{items}",
-            "§7Message: §f{message}",
-            "",
-            "§aClick to collect!"
         );
         
         List<String> lore = ItemBuilder.replacePlaceholders(
-            baseLore, 
+            plugin.getConfigManager().getMailItemLore(), 
             mail.getSenderName(), 
             mail.getSourceServer(), 
             timeStr, 
@@ -182,7 +170,12 @@ public class MailboxGUI implements Listener {
             message
         );
         
-        return ItemBuilder.createItem("PAPER", 0, name, lore);
+        return ItemBuilder.createItem(
+            plugin.getConfigManager().getMailItemMaterial(), 
+            plugin.getConfigManager().getMailItemCustomModelData(), 
+            name, 
+            lore
+        );
     }
     
     private void setupPagination() {

@@ -95,47 +95,53 @@ public class SendMailGUI implements Listener {
     
     private void setupControlButtons() {
         // Send button
-        List<String> sendLore = List.of(
-            "§7To: §f" + recipientName,
-            "§7Server: §f" + destinationServer,
-            "",
-            "§aClick to send!"
+        List<String> sendLore = ItemBuilder.replacePlaceholders(
+            plugin.getConfigManager().getSendButtonLore(),
+            null, 
+            destinationServer, 
+            null, 
+            0, 
+            null
         );
-        ItemStack sendButton = new ItemStack(Material.GREEN_WOOL);
-        ItemMeta sendMeta = sendButton.getItemMeta();
-        if (sendMeta != null) {
-            sendMeta.setDisplayName("§a§lSend Mail");
-            sendMeta.setLore(sendLore);
-            sendButton.setItemMeta(sendMeta);
-        }
+        sendLore = sendLore.stream()
+                .map(line -> line.replace("{recipient}", recipientName))
+                .toList();
+        
+        ItemStack sendButton = ItemBuilder.createItem(
+            plugin.getConfigManager().getSendButtonMaterial(),
+            plugin.getConfigManager().getSendButtonCustomModelData(),
+            plugin.getConfigManager().getSendButtonName(),
+            sendLore
+        );
         inventory.setItem(plugin.getConfigManager().getSendButtonSlot(), sendButton);
         
         // Message button
         if (plugin.getConfigManager().isMessagingEnabled()) {
-            List<String> messageLore = List.of(
-                "§7Click to add a message",
-                "§7to your mail package",
-                "",
-                mailMessage != null ? "§aMessage: §f" + mailMessage : "§7No message set"
+            List<String> messageLore = ItemBuilder.replacePlaceholders(
+                plugin.getConfigManager().getMessageButtonLore(),
+                null, 
+                null, 
+                null, 
+                0, 
+                mailMessage != null ? mailMessage : "No message set"
             );
-            ItemStack messageButton = new ItemStack(Material.WRITABLE_BOOK);
-            ItemMeta messageMeta = messageButton.getItemMeta();
-            if (messageMeta != null) {
-                messageMeta.setDisplayName("§e§lAdd Message");
-                messageMeta.setLore(messageLore);
-                messageButton.setItemMeta(messageMeta);
-            }
+            
+            ItemStack messageButton = ItemBuilder.createItem(
+                plugin.getConfigManager().getMessageButtonMaterial(),
+                plugin.getConfigManager().getMessageButtonCustomModelData(),
+                plugin.getConfigManager().getMessageButtonName(),
+                messageLore
+            );
             inventory.setItem(plugin.getConfigManager().getMessageButtonSlot(), messageButton);
         }
         
         // Cancel button
-        ItemStack cancelButton = new ItemStack(Material.RED_WOOL);
-        ItemMeta cancelMeta = cancelButton.getItemMeta();
-        if (cancelMeta != null) {
-            cancelMeta.setDisplayName("§c§lCancel");
-            cancelMeta.setLore(List.of("§7Click to cancel and return items"));
-            cancelButton.setItemMeta(cancelMeta);
-        }
+        ItemStack cancelButton = ItemBuilder.createItem(
+            plugin.getConfigManager().getCancelButtonMaterial(),
+            plugin.getConfigManager().getCancelButtonCustomModelData(),
+            plugin.getConfigManager().getCancelButtonName(),
+            plugin.getConfigManager().getCancelButtonLore()
+        );
         inventory.setItem(plugin.getConfigManager().getCancelButtonSlot(), cancelButton);
     }
     

@@ -77,6 +77,38 @@ gui:
     next_page_slot: 52
     refresh_slot: 50
     send_mail_slot: 49
+    # Mail item customization
+    mail_item:
+      material: "PAPER"
+      custom_model_data: 0
+      name: "§6Mail from {sender}"
+      lore:
+        - "§7From: §f{sender}"
+        - "§7Server: §f{server}"
+        - "§7Time: §f{time}"
+        - "§7Items: §f{items}"
+        - "§7Message: §f{message}"
+        - ""
+        - "§aClick to collect!"
+    # Control button customization
+    refresh_button:
+      material: "COMPASS"
+      custom_model_data: 0
+      name: "§bRefresh"
+      lore:
+        - "§7Click to refresh your mailbox"
+    send_mail_button:
+      material: "WRITABLE_BOOK"
+      custom_model_data: 0
+      name: "§aSend Mail"
+      lore:
+        - "§7Click to send mail to another server"
+    no_mail_item:
+      material: "BARRIER"
+      custom_model_data: 0
+      name: "§cNo mail"
+      lore:
+        - "§7You have no unread mail."
   sendmail:
     title: "§6§lSend Mail to {recipient}"
     player_head_slot: 4
@@ -84,6 +116,31 @@ gui:
     send_button_slot: 48
     message_button_slot: 49
     cancel_button_slot: 45
+    # Button customization
+    send_button:
+      material: "GREEN_WOOL"
+      custom_model_data: 0
+      name: "§a§lSend Mail"
+      lore:
+        - "§7To: §f{recipient}"
+        - "§7Server: §f{server}"
+        - ""
+        - "§aClick to send!"
+    message_button:
+      material: "WRITABLE_BOOK"
+      custom_model_data: 0
+      name: "§e§lAdd Message"
+      lore:
+        - "§7Click to add a message"
+        - "§7to your mail package"
+        - ""
+        - "§7Current: §f{message}"
+    cancel_button:
+      material: "RED_WOOL"
+      custom_model_data: 0
+      name: "§c§lCancel"
+      lore:
+        - "§7Click to cancel and return items"
 
 # Message system
 messages:

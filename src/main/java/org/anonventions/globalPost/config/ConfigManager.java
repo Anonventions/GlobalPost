@@ -79,6 +79,26 @@ public class ConfigManager {
         config.addDefault("gui.mailbox.refresh_slot", 50);
         config.addDefault("gui.mailbox.send_mail_slot", 49);
         
+        // Mail item defaults
+        config.addDefault("gui.mailbox.mail_item.material", "PAPER");
+        config.addDefault("gui.mailbox.mail_item.custom_model_data", 0);
+        config.addDefault("gui.mailbox.mail_item.name", "§6Mail from {sender}");
+        config.addDefault("gui.mailbox.mail_item.lore", Arrays.asList(
+            "§7From: §f{sender}", "§7Server: §f{server}", "§7Time: §f{time}",
+            "§7Items: §f{items}", "§7Message: §f{message}", "", "§aClick to collect!"
+        ));
+        
+        // Button defaults
+        config.addDefault("gui.mailbox.refresh_button.material", "COMPASS");
+        config.addDefault("gui.mailbox.refresh_button.custom_model_data", 0);
+        config.addDefault("gui.mailbox.refresh_button.name", "§bRefresh");
+        config.addDefault("gui.mailbox.refresh_button.lore", Arrays.asList("§7Click to refresh your mailbox"));
+        
+        config.addDefault("gui.mailbox.send_mail_button.material", "WRITABLE_BOOK");
+        config.addDefault("gui.mailbox.send_mail_button.custom_model_data", 0);
+        config.addDefault("gui.mailbox.send_mail_button.name", "§aSend Mail");
+        config.addDefault("gui.mailbox.send_mail_button.lore", Arrays.asList("§7Click to send mail to another server"));
+        
         // GUI defaults for sendmail
         config.addDefault("gui.sendmail.title", "§6§lSend Mail to {recipient}");
         config.addDefault("gui.sendmail.player_head_slot", 4);
@@ -86,6 +106,26 @@ public class ConfigManager {
         config.addDefault("gui.sendmail.send_button_slot", 48);
         config.addDefault("gui.sendmail.message_button_slot", 49);
         config.addDefault("gui.sendmail.cancel_button_slot", 45);
+        
+        // SendMail button defaults
+        config.addDefault("gui.sendmail.send_button.material", "GREEN_WOOL");
+        config.addDefault("gui.sendmail.send_button.custom_model_data", 0);
+        config.addDefault("gui.sendmail.send_button.name", "§a§lSend Mail");
+        config.addDefault("gui.sendmail.send_button.lore", Arrays.asList(
+            "§7To: §f{recipient}", "§7Server: §f{server}", "", "§aClick to send!"
+        ));
+        
+        config.addDefault("gui.sendmail.message_button.material", "WRITABLE_BOOK");
+        config.addDefault("gui.sendmail.message_button.custom_model_data", 0);
+        config.addDefault("gui.sendmail.message_button.name", "§e§lAdd Message");
+        config.addDefault("gui.sendmail.message_button.lore", Arrays.asList(
+            "§7Click to add a message", "§7to your mail package", "", "§7Current: §f{message}"
+        ));
+        
+        config.addDefault("gui.sendmail.cancel_button.material", "RED_WOOL");
+        config.addDefault("gui.sendmail.cancel_button.custom_model_data", 0);
+        config.addDefault("gui.sendmail.cancel_button.name", "§c§lCancel");
+        config.addDefault("gui.sendmail.cancel_button.lore", Arrays.asList("§7Click to cancel and return items"));
 
         // Message system defaults
         config.addDefault("messages.enabled", true);
@@ -168,12 +208,45 @@ public class ConfigManager {
     public int getRefreshSlot()               { return config.getInt("gui.mailbox.refresh_slot"); }
     public int getSendMailSlot()              { return config.getInt("gui.mailbox.send_mail_slot"); }
     
+    // Mail item customization
+    public String getMailItemMaterial()       { return config.getString("gui.mailbox.mail_item.material"); }
+    public int getMailItemCustomModelData()   { return config.getInt("gui.mailbox.mail_item.custom_model_data"); }
+    public String getMailItemName()           { return config.getString("gui.mailbox.mail_item.name"); }
+    public List<String> getMailItemLore()     { return config.getStringList("gui.mailbox.mail_item.lore"); }
+    
+    // Button customization
+    public String getRefreshButtonMaterial()  { return config.getString("gui.mailbox.refresh_button.material"); }
+    public int getRefreshButtonCustomModelData() { return config.getInt("gui.mailbox.refresh_button.custom_model_data"); }
+    public String getRefreshButtonName()      { return config.getString("gui.mailbox.refresh_button.name"); }
+    public List<String> getRefreshButtonLore() { return config.getStringList("gui.mailbox.refresh_button.lore"); }
+    
+    public String getSendMailButtonMaterial() { return config.getString("gui.mailbox.send_mail_button.material"); }
+    public int getSendMailButtonCustomModelData() { return config.getInt("gui.mailbox.send_mail_button.custom_model_data"); }
+    public String getSendMailButtonName()     { return config.getString("gui.mailbox.send_mail_button.name"); }
+    public List<String> getSendMailButtonLore() { return config.getStringList("gui.mailbox.send_mail_button.lore"); }
+    
     public String getSendMailTitle()          { return config.getString("gui.sendmail.title"); }
     public int getSendMailPlayerHeadSlot()    { return config.getInt("gui.sendmail.player_head_slot"); }
     public List<Integer> getSendMailContentSlots() { return config.getIntegerList("gui.sendmail.content_slots"); }
     public int getSendButtonSlot()            { return config.getInt("gui.sendmail.send_button_slot"); }
     public int getMessageButtonSlot()         { return config.getInt("gui.sendmail.message_button_slot"); }
     public int getCancelButtonSlot()          { return config.getInt("gui.sendmail.cancel_button_slot"); }
+    
+    // SendMail button customization
+    public String getSendButtonMaterial()     { return config.getString("gui.sendmail.send_button.material"); }
+    public int getSendButtonCustomModelData() { return config.getInt("gui.sendmail.send_button.custom_model_data"); }
+    public String getSendButtonName()         { return config.getString("gui.sendmail.send_button.name"); }
+    public List<String> getSendButtonLore()   { return config.getStringList("gui.sendmail.send_button.lore"); }
+    
+    public String getMessageButtonMaterial()  { return config.getString("gui.sendmail.message_button.material"); }
+    public int getMessageButtonCustomModelData() { return config.getInt("gui.sendmail.message_button.custom_model_data"); }
+    public String getMessageButtonName()      { return config.getString("gui.sendmail.message_button.name"); }
+    public List<String> getMessageButtonLore() { return config.getStringList("gui.sendmail.message_button.lore"); }
+    
+    public String getCancelButtonMaterial()   { return config.getString("gui.sendmail.cancel_button.material"); }
+    public int getCancelButtonCustomModelData() { return config.getInt("gui.sendmail.cancel_button.custom_model_data"); }
+    public String getCancelButtonName()       { return config.getString("gui.sendmail.cancel_button.name"); }
+    public List<String> getCancelButtonLore() { return config.getStringList("gui.sendmail.cancel_button.lore"); }
     
     /* Message system getters -----------------------------------------------*/
     public boolean isMessagingEnabled()       { return config.getBoolean("messages.enabled"); }
