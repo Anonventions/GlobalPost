@@ -54,3 +54,23 @@ settings:
   max_items_per_mail: 27
   max_mails_per_player: 50
   mail_expiry_days: 30
+
+# Enhanced UI Settings
+ui:
+  # Default theme for new players
+  default_theme: modern
+  
+  # Enable sound effects
+  sound_effects: true
+  
+  # Enable particle effects (future feature)
+  particle_effects: true
+  
+  # Enable player head displays in GUIs
+  player_heads: true
+  
+  # Animation speed for GUI updates (1-20, higher = faster)
+  animation_speed: 10
+  
+  # Auto-refresh mailbox interval in seconds (0 = disabled)
+  auto_refresh_interval: 30

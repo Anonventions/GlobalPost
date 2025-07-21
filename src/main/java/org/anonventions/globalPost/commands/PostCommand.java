@@ -4,8 +4,10 @@
 package org.anonventions.globalPost.commands;
 
 import org.anonventions.globalPost.GlobalPost;
-import org.anonventions.globalPost.gui.MailboxGUI;
-import org.anonventions.globalPost.gui.SendMailGUI;
+import org.anonventions.globalPost.gui.EnhancedMailboxGUI;
+import org.anonventions.globalPost.gui.EnhancedSendMailGUI;
+import org.anonventions.globalPost.gui.ThemeSelectionGUI;
+import org.anonventions.globalPost.ui.UITheme;
 import org.bukkit.command.*;
 import org.bukkit.entity.Player;
 
@@ -28,7 +30,7 @@ public class PostCommand implements CommandExecutor, TabCompleter {
 
         if (!(sender instanceof Player p)) { sender.sendMessage("§cPlayers only!"); return true; }
 
-        if (args.length == 0) { new MailboxGUI(plugin, p).open(); return true; }
+        if (args.length == 0) { new EnhancedMailboxGUI(plugin, p).open(); return true; }
 
         switch (args[0].toLowerCase(Locale.ROOT)) {
 
@@ -41,21 +43,35 @@ public class PostCommand implements CommandExecutor, TabCompleter {
                 if (!plugin.getConfigManager().getAllowedDestinations().contains(dest)) {
                     p.sendMessage("§cInvalid destination server: " + dest); return true;
                 }
-                new SendMailGUI(plugin, p, dest, recipient).open();
+                new EnhancedSendMailGUI(plugin, p, dest, recipient).open();
             }
 
-            case "check" ->
-                    plugin.getMailboxManager().getMailCount(p.getUniqueId()).thenAccept(cnt ->
-                            p.sendMessage("§aYou have " + cnt + " unread mail(s)."));
+            case "check" -> {
+                UITheme theme = plugin.getThemeManager().getPlayerTheme(p);
+                plugin.getMailboxManager().getMailCount(p.getUniqueId()).thenAccept(cnt ->
+                        p.sendMessage(theme.getAccentColor() + "📬 You have " + theme.getSuccessColor() + 
+                        cnt + theme.getAccentColor() + " unread mail(s)."));
+            }
+
+            case "theme", "themes" -> new ThemeSelectionGUI(plugin, p).open();
 
             case "reload" -> {
-                if (!p.hasPermission("globalpost.admin")) { p.sendMessage("§cYou lack globalpost.admin"); return true; }
+                if (!p.hasPermission("globalpost.admin")) { 
+                    UITheme theme = plugin.getThemeManager().getPlayerTheme(p);
+                    p.sendMessage(theme.getErrorColor() + "✗ You lack globalpost.admin permission"); 
+                    return true; 
+                }
                 plugin.getConfigManager().loadConfig();
                 plugin.getBlacklistManager().reloadBlacklist();
-                p.sendMessage("§aGlobalPost reloaded!");
+                UITheme theme = plugin.getThemeManager().getPlayerTheme(p);
+                p.sendMessage(theme.getSuccessColor() + "✓ GlobalPost reloaded!");
             }
 
-            default -> p.sendMessage("§cUsage: /post [send|check|reload]");
+            default -> {
+                UITheme theme = plugin.getThemeManager().getPlayerTheme(p);
+                p.sendMessage(theme.getErrorColor() + "Usage: " + theme.getAccentColor() + 
+                    "/post " + theme.getTextColor() + "[send|check|theme|reload]");
+            }
         }
         return true;
     }
@@ -63,7 +79,7 @@ public class PostCommand implements CommandExecutor, TabCompleter {
     /*------------------------------------------------------------------------*/
     @Override
     public List<String> onTabComplete(CommandSender s, Command c, String a, String[] args) {
-        if (args.length == 1) return List.of("send", "check", "reload");
+        if (args.length == 1) return List.of("send", "check", "theme", "themes", "reload");
         if (args.length == 2 && args[0].equalsIgnoreCase("send"))
             return plugin.getConfigManager().getAllowedDestinations();
         return Collections.emptyList();

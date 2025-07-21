@@ -7,6 +7,7 @@ import org.anonventions.globalPost.listeners.PlayerListener;
 import org.anonventions.globalPost.managers.ItemBlacklistManager;
 import org.anonventions.globalPost.managers.MailboxManager;
 import org.anonventions.globalPost.messaging.PluginMessageHandler;
+import org.anonventions.globalPost.ui.ThemeManager;
 import org.bukkit.plugin.java.JavaPlugin;
 
 import java.util.logging.Level;
@@ -19,6 +20,7 @@ public final class GlobalPost extends JavaPlugin {
     private MailboxManager mailboxManager;
     private ItemBlacklistManager blacklistManager;
     private PluginMessageHandler messageHandler;
+    private ThemeManager themeManager;
 
     @Override
     public void onEnable() {
@@ -39,6 +41,7 @@ public final class GlobalPost extends JavaPlugin {
         // Initialize managers
         blacklistManager = new ItemBlacklistManager(this);
         mailboxManager = new MailboxManager(this);
+        themeManager = new ThemeManager(this);
 
         // Initialize plugin messaging
         messageHandler = new PluginMessageHandler(this);
@@ -89,5 +92,9 @@ public final class GlobalPost extends JavaPlugin {
 
     public PluginMessageHandler getMessageHandler() {
         return messageHandler;
+    }
+    
+    public ThemeManager getThemeManager() {
+        return themeManager;
     }
 }
