@@ -7,6 +7,8 @@ import org.anonventions.globalPost.GlobalPost;
 import org.anonventions.globalPost.gui.EnhancedMailboxGUI;
 import org.anonventions.globalPost.gui.EnhancedSendMailGUI;
 import org.anonventions.globalPost.gui.ThemeSelectionGUI;
+import org.anonventions.globalPost.gui.MailStatsGUI;
+import org.anonventions.globalPost.gui.MailSearchGUI;
 import org.anonventions.globalPost.ui.UITheme;
 import org.bukkit.command.*;
 import org.bukkit.entity.Player;
@@ -54,6 +56,10 @@ public class PostCommand implements CommandExecutor, TabCompleter {
             }
 
             case "theme", "themes" -> new ThemeSelectionGUI(plugin, p).open();
+            
+            case "stats", "statistics" -> new MailStatsGUI(plugin, p).open();
+            
+            case "search" -> new MailSearchGUI(plugin, p, new EnhancedMailboxGUI(plugin, p)).open();
 
             case "reload" -> {
                 if (!p.hasPermission("globalpost.admin")) { 
@@ -70,7 +76,7 @@ public class PostCommand implements CommandExecutor, TabCompleter {
             default -> {
                 UITheme theme = plugin.getThemeManager().getPlayerTheme(p);
                 p.sendMessage(theme.getErrorColor() + "Usage: " + theme.getAccentColor() + 
-                    "/post " + theme.getTextColor() + "[send|check|theme|reload]");
+                    "/post " + theme.getTextColor() + "[send|check|theme|stats|search|reload]");
             }
         }
         return true;
@@ -79,7 +85,7 @@ public class PostCommand implements CommandExecutor, TabCompleter {
     /*------------------------------------------------------------------------*/
     @Override
     public List<String> onTabComplete(CommandSender s, Command c, String a, String[] args) {
-        if (args.length == 1) return List.of("send", "check", "theme", "themes", "reload");
+        if (args.length == 1) return List.of("send", "check", "theme", "themes", "stats", "statistics", "search", "reload");
         if (args.length == 2 && args[0].equalsIgnoreCase("send"))
             return plugin.getConfigManager().getAllowedDestinations();
         return Collections.emptyList();

@@ -54,9 +54,10 @@ public class EnhancedMailboxGUI implements Listener {
     private static final int SETTINGS_SLOT = 49;
     private static final int REFRESH_SLOT = 50;
     private static final int SEND_MAIL_SLOT = 51;
+    private static final int STATS_SLOT = 52;
     private static final int PREVIOUS_PAGE_SLOT = 45;
     private static final int NEXT_PAGE_SLOT = 53;
-    private static final int CLOSE_SLOT = 52;
+    private static final int CLOSE_SLOT = 36;
 
     public enum SortType {
         NEWEST_FIRST("Newest First", "§7Sort by newest mail first"),
@@ -322,7 +323,7 @@ public class EnhancedMailboxGUI implements Listener {
             theme.getTextColor() + "Show read mail: " + (showReadMails ? "§aYes" : "§cNo"),
             "",
             theme.getSuccessColor() + "▶ Left-click to toggle read mail filter",
-            theme.getWarningColor() + "▶ Right-click to clear search filter"
+            theme.getWarningColor() + "▶ Right-click for advanced search"
         );
         inventory.setItem(SEARCH_SLOT, search);
         
@@ -366,6 +367,16 @@ public class EnhancedMailboxGUI implements Listener {
             theme.getSuccessColor() + "▶ Click to open send mail interface"
         );
         inventory.setItem(SEND_MAIL_SLOT, sendMail);
+        
+        // Statistics button
+        ItemStack stats = UIUtils.createItem(
+            Material.KNOWLEDGE_BOOK,
+            theme.getAccentColor() + "§l📊 Mail Statistics",
+            theme.getSubtitleColor() + "View your mail analytics and data",
+            "",
+            theme.getSuccessColor() + "▶ Click to view statistics"
+        );
+        inventory.setItem(STATS_SLOT, stats);
     }
 
     private void createInfoPanel(UITheme theme) {
@@ -505,10 +516,10 @@ public class EnhancedMailboxGUI implements Listener {
                     applyFiltersAndSort();
                     updateInventory();
                 } else if (event.isRightClick()) {
-                    searchFilter = "";
+                    // Open advanced search GUI
                     themeManager.playSound(player, theme.getClickSound());
-                    applyFiltersAndSort();
-                    updateInventory();
+                    clicker.closeInventory();
+                    new MailSearchGUI(plugin, player, this).open();
                 }
                 break;
                 
@@ -537,6 +548,12 @@ public class EnhancedMailboxGUI implements Listener {
                 clicker.closeInventory();
                 clicker.sendMessage(theme.getAccentColor() + "Use " + theme.getSuccessColor() + "/post send <server> [player]" + 
                     theme.getAccentColor() + " to send mail!");
+                break;
+                
+            case STATS_SLOT:
+                themeManager.playSound(player, theme.getClickSound());
+                clicker.closeInventory();
+                new MailStatsGUI(plugin, player).open();
                 break;
                 
             case PREVIOUS_PAGE_SLOT:
