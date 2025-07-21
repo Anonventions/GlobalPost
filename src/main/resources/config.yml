@@ -48,9 +48,22 @@ blacklist:
     - BLACK_SHULKER_BOX
     - ENCHANTED_BOOK
     - BEDROCK
+  # Custom item blacklisting by display name, lore, or NBT data
+  custom_items:
+    display_names:
+      - "§cAdmin Item"
+      - "§4[BANNED]"
+    lore_contains:
+      - "ADMIN ONLY"
+      - "NOT TRADEABLE"
+    # NBT keys to check (if any of these keys exist, item is blacklisted)
+    nbt_keys:
+      - "CustomAdminData"
+      - "UntradableItem"
 
 # Mail system settings
 settings:
   max_items_per_mail: 27
   max_mails_per_player: 50
   mail_expiry_days: 30
+  invisible_borders: false  # Set to true to hide glass pane borders in GUIs

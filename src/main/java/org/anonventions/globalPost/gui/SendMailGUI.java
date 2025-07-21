@@ -24,12 +24,14 @@ public class SendMailGUI implements Listener {
     private final String recipientName;
     private final Inventory inventory;
     private boolean isProcessing = false;
+    private final boolean invisibleBorders;
 
     public SendMailGUI(GlobalPost plugin, Player player, String destinationServer, String recipientName) {
         this.plugin = plugin;
         this.player = player;
         this.destinationServer = destinationServer;
         this.recipientName = recipientName;
+        this.invisibleBorders = plugin.getConfigManager().hasInvisibleBorders();
         this.inventory = Bukkit.createInventory(null, 54, "§6§lSend Mail to " + recipientName);
 
         plugin.getServer().getPluginManager().registerEvents(this, plugin);
@@ -37,16 +39,22 @@ public class SendMailGUI implements Listener {
     }
 
     private void setupGUI() {
-        // Create border
-        ItemStack border = new ItemStack(Material.GRAY_STAINED_GLASS_PANE);
-        ItemMeta borderMeta = border.getItemMeta();
-        borderMeta.setDisplayName(" ");
-        border.setItemMeta(borderMeta);
+        // Create border (only if not invisible)
+        ItemStack border = null;
+        
+        if (!invisibleBorders) {
+            border = new ItemStack(Material.GRAY_STAINED_GLASS_PANE);
+            ItemMeta borderMeta = border.getItemMeta();
+            borderMeta.setDisplayName(" ");
+            border.setItemMeta(borderMeta);
+        }
 
-        // Set border items
-        for (int i = 0; i < 54; i++) {
-            if (i < 9 || i >= 45 || i % 9 == 0 || i % 9 == 8) {
-                inventory.setItem(i, border);
+        // Set border items (only if borders are visible)
+        if (!invisibleBorders) {
+            for (int i = 0; i < 54; i++) {
+                if (i < 9 || i >= 45 || i % 9 == 0 || i % 9 == 8) {
+                    inventory.setItem(i, border);
+                }
             }
         }
 
@@ -61,7 +69,7 @@ public class SendMailGUI implements Listener {
                 "§aClick to send!"
         ));
         sendButton.setItemMeta(sendMeta);
-        inventory.setItem(49, sendButton);
+        inventory.setItem(invisibleBorders ? 53 : 49, sendButton);
 
         // Cancel button
         ItemStack cancelButton = new ItemStack(Material.RED_WOOL);
@@ -69,7 +77,7 @@ public class SendMailGUI implements Listener {
         cancelMeta.setDisplayName("§c§lCancel");
         cancelMeta.setLore(List.of("§7Click to cancel and return items"));
         cancelButton.setItemMeta(cancelMeta);
-        inventory.setItem(45, cancelButton);
+        inventory.setItem(invisibleBorders ? 45 : 45, cancelButton);
 
         // Info item
         ItemStack info = new ItemStack(Material.BOOK);
@@ -82,7 +90,29 @@ public class SendMailGUI implements Listener {
                 "§7Maximum items: §f" + plugin.getConfigManager().getMaxItemsPerMail()
         ));
         info.setItemMeta(infoMeta);
-        inventory.setItem(4, info);
+        inventory.setItem(invisibleBorders ? 4 : 4, info);
+    }
+
+    private boolean isMailSlot(int slot) {
+        if (invisibleBorders) {
+            // Without borders, avoid the button/info slots
+            return slot != 4 && slot != 45 && slot != 53;
+        } else {
+            // With borders, use the middle area excluding borders
+            return slot >= 10 && slot <= 43 && slot % 9 != 0 && slot % 9 != 8;
+        }
+    }
+
+    private int getSendButtonSlot() {
+        return invisibleBorders ? 53 : 49;
+    }
+
+    private int getCancelButtonSlot() {
+        return 45; // Same for both modes
+    }
+
+    private int getInfoSlot() {
+        return 4; // Same for both modes
     }
 
     public void open() {
@@ -100,19 +130,19 @@ public class SendMailGUI implements Listener {
 
         int slot = event.getSlot();
 
-        // Allow placing items in the mail area (slots 10-43, excluding borders)
-        if (slot >= 10 && slot <= 43 && slot % 9 != 0 && slot % 9 != 8) {
+        // Allow placing items in the mail area
+        if (isMailSlot(slot)) {
             ItemStack clicked = event.getCurrentItem();
 
             if (event.isShiftClick() && event.getClickedInventory() == player.getInventory()) {
-                // Handle shift click from player inventory
+                // Handle shift click from player inventory (including hotbar)
                 ItemStack item = event.getCurrentItem();
                 if (item != null && !plugin.getBlacklistManager().isBlacklisted(item)) {
                     // Find empty slot in mail area
-                    for (int i = 10; i <= 43; i++) {
-                        if (i % 9 != 0 && i % 9 != 8 && (inventory.getItem(i) == null || inventory.getItem(i).getType() == Material.AIR)) {
+                    for (int i = 0; i < 54; i++) {
+                        if (isMailSlot(i) && (inventory.getItem(i) == null || inventory.getItem(i).getType() == Material.AIR)) {
                             inventory.setItem(i, item.clone());
-                            item.setAmount(0);
+                            item.setAmount(0); // Remove from player inventory to prevent duplication
                             break;
                         }
                     }
@@ -132,12 +162,12 @@ public class SendMailGUI implements Listener {
 
         event.setCancelled(true);
 
-        if (slot == 49) { // Send button
+        if (slot == getSendButtonSlot()) { // Send button
             if (!isProcessing) {
                 isProcessing = true;
                 sendMail();
             }
-        } else if (slot == 45) { // Cancel button
+        } else if (slot == getCancelButtonSlot()) { // Cancel button
             returnItems();
             player.closeInventory();
         }
@@ -161,8 +191,8 @@ public class SendMailGUI implements Listener {
         List<ItemStack> items = new ArrayList<>();
 
         // Collect items from mail slots
-        for (int i = 10; i <= 43; i++) {
-            if (i % 9 != 0 && i % 9 != 8) {
+        for (int i = 0; i < 54; i++) {
+            if (isMailSlot(i)) {
                 ItemStack item = inventory.getItem(i);
                 if (item != null && item.getType() != Material.AIR) {
                     items.add(item.clone());
@@ -208,8 +238,8 @@ public class SendMailGUI implements Listener {
                         player.sendMessage("§aMail sent successfully to " + recipientName + " on " + destinationServer + "!");
 
                         // Clear the mail slots
-                        for (int i = 10; i <= 43; i++) {
-                            if (i % 9 != 0 && i % 9 != 8) {
+                        for (int i = 0; i < 54; i++) {
+                            if (isMailSlot(i)) {
                                 inventory.setItem(i, null);
                             }
                         }
@@ -251,8 +281,8 @@ public class SendMailGUI implements Listener {
     }
 
     private void returnItems() {
-        for (int i = 10; i <= 43; i++) {
-            if (i % 9 != 0 && i % 9 != 8) {
+        for (int i = 0; i < 54; i++) {
+            if (isMailSlot(i)) {
                 ItemStack item = inventory.getItem(i);
                 if (item != null && item.getType() != Material.AIR) {
                     // Try to add to player inventory, drop if full
