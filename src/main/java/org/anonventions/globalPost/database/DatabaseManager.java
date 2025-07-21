@@ -1,190 +1,179 @@
+/*─────────────────────────────────────────────────────────────────────────────
+ *  org/anonventions/globalPost/database/DatabaseManager.java
+ *───────────────────────────────────────────────────────────────────────────*/
 package org.anonventions.globalPost.database;
 
 import org.anonventions.globalPost.GlobalPost;
 import org.anonventions.globalPost.models.Mail;
-import org.bukkit.inventory.ItemStack;
 
 import java.io.File;
 import java.sql.*;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.UUID;
+import java.util.*;
 import java.util.concurrent.CompletableFuture;
 
+/**
+ * Handles all DB I/O (SQLite or MySQL). <br>
+ * WHERE clauses use LOWER() for destination_server so canonical names work
+ * even on legacy rows.
+ */
 public class DatabaseManager {
 
     private final GlobalPost plugin;
-    private Connection connection;
+    private       Connection connection;
 
-    public DatabaseManager(GlobalPost plugin) {
-        this.plugin = plugin;
-    }
+    public DatabaseManager(GlobalPost plugin) { this.plugin = plugin; }
 
+    /*------------------------------------------------------------------------*/
     public boolean initialize() {
         try {
-            if (plugin.getConfigManager().getDatabaseType().equalsIgnoreCase("mysql")) {
+            if ("mysql".equalsIgnoreCase(plugin.getConfigManager().getDatabaseType()))
                 initializeMySQL();
-            } else {
-                initializeSQLite();
-            }
+            else initializeSQLite();
 
             createTables();
             return true;
-        } catch (SQLException e) {
-            plugin.getLogger().severe("Failed to initialize database: " + e.getMessage());
+        }
+        catch (SQLException ex) {
+            plugin.getLogger().severe("DB init failed: " + ex.getMessage());
             return false;
         }
     }
 
     private void initializeSQLite() throws SQLException {
-        File dataFolder = plugin.getDataFolder();
-        if (!dataFolder.exists()) {
-            dataFolder.mkdirs();
-        }
-
-        String url = "jdbc:sqlite:" + dataFolder + "/" + plugin.getConfigManager().getSQLiteFile();
+        File data = plugin.getDataFolder();
+        if (!data.exists()) data.mkdirs();
+        String url = "jdbc:sqlite:" + data + "/" + plugin.getConfigManager().getSQLiteFile();
         connection = DriverManager.getConnection(url);
     }
 
     private void initializeMySQL() throws SQLException {
-        String host = plugin.getConfigManager().getMySQLHost();
-        int port = plugin.getConfigManager().getMySQLPort();
-        String database = plugin.getConfigManager().getMySQLDatabase();
-        String username = plugin.getConfigManager().getMySQLUsername();
-        String password = plugin.getConfigManager().getMySQLPassword();
+        String h = plugin.getConfigManager().getMySQLHost();
+        int    p = plugin.getConfigManager().getMySQLPort();
+        String d = plugin.getConfigManager().getMySQLDatabase();
+        String u = plugin.getConfigManager().getMySQLUsername();
+        String pw= plugin.getConfigManager().getMySQLPassword();
 
-        String url = "jdbc:mysql://" + host + ":" + port + "/" + database + "?useSSL=false&autoReconnect=true";
-        connection = DriverManager.getConnection(url, username, password);
+        String url = "jdbc:mysql://" + h + ":" + p + "/" + d + "?useSSL=false&autoReconnect=true";
+        connection = DriverManager.getConnection(url, u, pw);
     }
 
+    /*------------------------------------------------------------------------*/
     private void createTables() throws SQLException {
-        String createMailsTable = """
-            CREATE TABLE IF NOT EXISTS mails (
-                id INTEGER PRIMARY KEY %s,
-                sender_uuid VARCHAR(36) NOT NULL,
-                sender_name VARCHAR(16) NOT NULL,
-                recipient_uuid VARCHAR(36) NOT NULL,
-                recipient_name VARCHAR(16) NOT NULL,
-                source_server VARCHAR(32) NOT NULL,
-                destination_server VARCHAR(32) NOT NULL,
-                items TEXT NOT NULL,
-                message TEXT,
-                sent_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-                collected BOOLEAN DEFAULT FALSE,
-                collected_at TIMESTAMP NULL
-            )
-        """.formatted(plugin.getConfigManager().getDatabaseType().equalsIgnoreCase("mysql") ? "AUTO_INCREMENT" : "AUTOINCREMENT");
+        String auto = "mysql".equalsIgnoreCase(plugin.getConfigManager().getDatabaseType()) ? "AUTO_INCREMENT" : "AUTOINCREMENT";
 
-        try (Statement stmt = connection.createStatement()) {
-            stmt.execute(createMailsTable);
-        }
+        String sql = """
+            CREATE TABLE IF NOT EXISTS mails (
+              id INTEGER PRIMARY KEY %s,
+              sender_uuid        VARCHAR(36) NOT NULL,
+              sender_name        VARCHAR(16) NOT NULL,
+              recipient_uuid     VARCHAR(36) NOT NULL,
+              recipient_name     VARCHAR(16) NOT NULL,
+              source_server      VARCHAR(32) NOT NULL,
+              destination_server VARCHAR(32) NOT NULL,
+              items              TEXT        NOT NULL,
+              message            TEXT,
+              sent_at            TIMESTAMP   DEFAULT CURRENT_TIMESTAMP,
+              collected          BOOLEAN     DEFAULT 0,
+              collected_at       TIMESTAMP   NULL
+            )""".formatted(auto);
+
+        try (Statement st = connection.createStatement()) { st.execute(sql); }
     }
 
+    /*------------------------------------------------------------------------*/
     public CompletableFuture<Boolean> saveMail(Mail mail) {
         return CompletableFuture.supplyAsync(() -> {
             String sql = """
-                INSERT INTO mails (sender_uuid, sender_name, recipient_uuid, recipient_name, 
-                                 source_server, destination_server, items, message) 
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+                INSERT INTO mails (sender_uuid,sender_name,recipient_uuid,recipient_name,
+                                   source_server,destination_server,items,message)
+                VALUES (?,?,?,?,?,?,?,?)
             """;
-
-            try (PreparedStatement stmt = connection.prepareStatement(sql)) {
-                stmt.setString(1, mail.getSenderUUID().toString());
-                stmt.setString(2, mail.getSenderName());
-                stmt.setString(3, mail.getRecipientUUID().toString());
-                stmt.setString(4, mail.getRecipientName());
-                stmt.setString(5, mail.getSourceServer());
-                stmt.setString(6, mail.getDestinationServer());
-                stmt.setString(7, ItemSerializer.serializeItems(mail.getItems()));
-                stmt.setString(8, mail.getMessage());
-
-                return stmt.executeUpdate() > 0;
-            } catch (SQLException e) {
-                plugin.getLogger().severe("Failed to save mail: " + e.getMessage());
+            try (PreparedStatement ps = connection.prepareStatement(sql)) {
+                ps.setString(1, mail.getSenderUUID().toString());
+                ps.setString(2, mail.getSenderName());
+                ps.setString(3, mail.getRecipientUUID().toString());
+                ps.setString(4, mail.getRecipientName());
+                ps.setString(5, mail.getSourceServer());
+                ps.setString(6, mail.getDestinationServer());
+                ps.setString(7, ItemSerializer.serializeItems(mail.getItems()));
+                ps.setString(8, mail.getMessage());
+                return ps.executeUpdate() > 0;
+            }
+            catch (SQLException ex) {
+                plugin.getLogger().severe("saveMail: " + ex);
                 return false;
             }
         });
     }
 
-    public CompletableFuture<List<Mail>> getUnreadMails(UUID playerUUID, String serverName) {
+    /*------------------------------------------------------------------------*/
+    public CompletableFuture<List<Mail>> getUnreadMails(UUID uuid, String serverCanonical) {
         return CompletableFuture.supplyAsync(() -> {
+
             String sql = """
-                SELECT * FROM mails 
-                WHERE recipient_uuid = ? AND destination_server = ? AND collected = FALSE
-                ORDER BY sent_at ASC
+                SELECT * FROM mails
+                WHERE recipient_uuid = ? AND LOWER(destination_server) = ? AND collected = 0
+                ORDER BY sent_at
             """;
-
-            List<Mail> mails = new ArrayList<>();
-
-            try (PreparedStatement stmt = connection.prepareStatement(sql)) {
-                stmt.setString(1, playerUUID.toString());
-                stmt.setString(2, serverName);
-
-                ResultSet rs = stmt.executeQuery();
-                while (rs.next()) {
-                    Mail mail = new Mail();
-                    mail.setId(rs.getInt("id"));
-                    mail.setSenderUUID(UUID.fromString(rs.getString("sender_uuid")));
-                    mail.setSenderName(rs.getString("sender_name"));
-                    mail.setRecipientUUID(UUID.fromString(rs.getString("recipient_uuid")));
-                    mail.setRecipientName(rs.getString("recipient_name"));
-                    mail.setSourceServer(rs.getString("source_server"));
-                    mail.setDestinationServer(rs.getString("destination_server"));
-                    mail.setItems(ItemSerializer.deserializeItems(rs.getString("items")));
-                    mail.setMessage(rs.getString("message"));
-                    mail.setSentAt(rs.getTimestamp("sent_at"));
-                    mail.setCollected(rs.getBoolean("collected"));
-
-                    mails.add(mail);
-                }
-            } catch (SQLException e) {
-                plugin.getLogger().severe("Failed to get unread mails: " + e.getMessage());
+            List<Mail> list = new ArrayList<>();
+            try (PreparedStatement ps = connection.prepareStatement(sql)) {
+                ps.setString(1, uuid.toString());
+                ps.setString(2, serverCanonical);
+                ResultSet rs = ps.executeQuery();
+                while (rs.next()) list.add(rowToMail(rs));
             }
-
-            return mails;
+            catch (SQLException ex) { plugin.getLogger().severe("getUnreadMails: " + ex); }
+            return list;
         });
     }
 
-    public CompletableFuture<Boolean> markMailAsCollected(int mailId) {
+    /*------------------------------------------------------------------------*/
+    public CompletableFuture<Boolean> markMailAsCollected(int id) {
         return CompletableFuture.supplyAsync(() -> {
-            String sql = "UPDATE mails SET collected = TRUE, collected_at = CURRENT_TIMESTAMP WHERE id = ?";
-
-            try (PreparedStatement stmt = connection.prepareStatement(sql)) {
-                stmt.setInt(1, mailId);
-                return stmt.executeUpdate() > 0;
-            } catch (SQLException e) {
-                plugin.getLogger().severe("Failed to mark mail as collected: " + e.getMessage());
-                return false;
+            try (PreparedStatement ps = connection.prepareStatement(
+                    "UPDATE mails SET collected = 1, collected_at = CURRENT_TIMESTAMP WHERE id = ?")) {
+                ps.setInt(1, id);
+                return ps.executeUpdate() > 0;
             }
+            catch (SQLException ex) { plugin.getLogger().severe("markCollected: " + ex); return false; }
         });
     }
 
-    public CompletableFuture<Integer> getMailCount(UUID playerUUID) {
+    /*------------------------------------------------------------------------*/
+    public CompletableFuture<Integer> getMailCount(UUID uuid, String serverCanonical) {
         return CompletableFuture.supplyAsync(() -> {
-            String sql = "SELECT COUNT(*) FROM mails WHERE recipient_uuid = ? AND collected = FALSE";
-
-            try (PreparedStatement stmt = connection.prepareStatement(sql)) {
-                stmt.setString(1, playerUUID.toString());
-
-                ResultSet rs = stmt.executeQuery();
-                if (rs.next()) {
-                    return rs.getInt(1);
-                }
-            } catch (SQLException e) {
-                plugin.getLogger().severe("Failed to get mail count: " + e.getMessage());
+            try (PreparedStatement ps = connection.prepareStatement(
+                    "SELECT COUNT(*) FROM mails WHERE recipient_uuid = ? AND LOWER(destination_server) = ? AND collected = 0")) {
+                ps.setString(1, uuid.toString());
+                ps.setString(2, serverCanonical);
+                ResultSet rs = ps.executeQuery();
+                return rs.next() ? rs.getInt(1) : 0;
             }
-
-            return 0;
+            catch (SQLException ex) { plugin.getLogger().severe("getMailCount: " + ex); return 0; }
         });
     }
 
+    /*------------------------------------------------------------------------*/
+    private Mail rowToMail(ResultSet rs) throws SQLException {
+        Mail m = new Mail();
+        m.setId(rs.getInt("id"));
+        m.setSenderUUID(UUID.fromString(rs.getString("sender_uuid")));
+        m.setSenderName(rs.getString("sender_name"));
+        m.setRecipientUUID(UUID.fromString(rs.getString("recipient_uuid")));
+        m.setRecipientName(rs.getString("recipient_name"));
+        m.setSourceServer(rs.getString("source_server"));
+        m.setDestinationServer(rs.getString("destination_server"));
+        m.setItems(ItemSerializer.deserializeItems(rs.getString("items")));
+        m.setMessage(rs.getString("message"));
+        m.setSentAt(rs.getTimestamp("sent_at"));
+        m.setCollected(rs.getBoolean("collected"));
+        m.setCollectedAt(rs.getTimestamp("collected_at"));
+        return m;
+    }
+
+    /*------------------------------------------------------------------------*/
     public void close() {
-        if (connection != null) {
-            try {
-                connection.close();
-            } catch (SQLException e) {
-                plugin.getLogger().severe("Failed to close database connection: " + e.getMessage());
-            }
-        }
+        if (connection != null) try { connection.close(); }
+        catch (SQLException ex) { plugin.getLogger().severe("DB close: " + ex); }
     }
 }

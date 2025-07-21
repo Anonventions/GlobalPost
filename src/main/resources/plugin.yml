@@ -1,8 +1,23 @@
 name: GlobalPost
-version: '1.0'
+version: 1.0
 main: org.anonventions.globalPost.GlobalPost
-api-version: '1.20'
-load: STARTUP
-authors: [ Axmon, amon_m, anonventions ]
-description: Wardrobe is a plugin for saving and managing skins!
-website: https://github.com/Anonventions
+api-version: 1.20
+author: Anonventions
+description: Cross-server mailbox system for Velocity proxy networks
+
+commands:
+  post:
+    description: Access the mail system
+    usage: /<command> [send|check|reload]
+    permission: globalpost.use
+
+permissions:
+  globalpost.use:
+    description: Allows using the mail system
+    default: true
+  globalpost.send:
+    description: Allows sending mail
+    default: true
+  globalpost.admin:
+    description: Allows admin commands
+    default: op

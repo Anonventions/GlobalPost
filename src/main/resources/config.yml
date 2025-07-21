@@ -1,0 +1,56 @@
+# GlobalPost Configuration
+
+# Database settings
+database:
+  type: sqlite  # sqlite or mysql
+  sqlite:
+    file: globalpost.db
+  mysql:
+    host: localhost
+    port: 3306
+    database: globalpost
+    username: root
+    password: password
+
+# Server identification
+server:
+  name: server1
+
+# Channel configuration (which servers can send mail to each other)
+channels:
+  server1:
+    - server2
+    - server3
+  server2:
+    - server1
+  server3:
+    - server1
+
+# Item blacklist (items that cannot be sent through mail)
+blacklist:
+  items:
+    - SHULKER_BOX
+    - WHITE_SHULKER_BOX
+    - ORANGE_SHULKER_BOX
+    - MAGENTA_SHULKER_BOX
+    - LIGHT_BLUE_SHULKER_BOX
+    - YELLOW_SHULKER_BOX
+    - LIME_SHULKER_BOX
+    - PINK_SHULKER_BOX
+    - GRAY_SHULKER_BOX
+    - LIGHT_GRAY_SHULKER_BOX
+    - CYAN_SHULKER_BOX
+    - PURPLE_SHULKER_BOX
+    - BLUE_SHULKER_BOX
+    - BROWN_SHULKER_BOX
+    - GREEN_SHULKER_BOX
+    - RED_SHULKER_BOX
+    - BLACK_SHULKER_BOX
+    - ENCHANTED_BOOK
+    - BEDROCK
+
+# Mail system settings
+settings:
+  max_items_per_mail: 27
+  max_mails_per_player: 50
+  mail_expiry_days: 30
