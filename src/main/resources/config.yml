@@ -54,3 +54,122 @@ settings:
   max_items_per_mail: 27
   max_mails_per_player: 50
   mail_expiry_days: 30
+  enable_local_mail: true  # Allow same-server mail when MySQL not configured
+
+# Sound settings
+sounds:
+  enabled: true
+  gui_open: "UI_BUTTON_CLICK"
+  mail_send: "ENTITY_PLAYER_LEVELUP"
+  mail_receive: "BLOCK_NOTE_BLOCK_BELL"
+  volume: 1.0
+  pitch: 1.0
+
+# GUI Customization
+gui:
+  mailbox:
+    title: "§6§lMailbox"
+    player_head_slot: 4
+    content_slots: [10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43]
+    pagination_slots: [46, 47, 48, 49, 50, 51, 52]
+    border_item:
+      material: "GRAY_STAINED_GLASS_PANE"
+      custom_model_data: 0
+      name: " "
+      lore: []
+    previous_page:
+      material: "ARROW"
+      custom_model_data: 0
+      name: "§7« Previous Page"
+      lore: ["§8Click to go to previous page"]
+      slot: 46
+    next_page:
+      material: "ARROW"
+      custom_model_data: 0
+      name: "§7Next Page »"
+      lore: ["§8Click to go to next page"]
+      slot: 52
+    refresh:
+      material: "COMPASS"
+      custom_model_data: 0
+      name: "§bRefresh"
+      lore: ["§7Click to refresh your mailbox"]
+      slot: 50
+    send_mail:
+      material: "WRITABLE_BOOK"
+      custom_model_data: 0
+      name: "§aSend Mail"
+      lore: ["§7Click to send mail to another server"]
+      slot: 49
+    mail_item:
+      material: "PAPER"
+      custom_model_data: 0
+      name: "§6Mail from {sender}"
+      lore:
+        - "§7From: §f{sender}"
+        - "§7Server: §f{server}"
+        - "§7Time: §f{time}"
+        - "§7Items: §f{items}"
+        - "§7Message: §f{message}"
+        - ""
+        - "§aClick to collect!"
+    no_mail:
+      material: "BARRIER"
+      custom_model_data: 0
+      name: "§cNo mail"
+      lore: ["§7You have no unread mail."]
+      slot: 22
+  sendmail:
+    title: "§6§lSend Mail to {recipient}"
+    player_head_slot: 4
+    content_slots: [10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43]
+    border_item:
+      material: "GRAY_STAINED_GLASS_PANE"
+      custom_model_data: 0
+      name: " "
+      lore: []
+    send_button:
+      material: "GREEN_WOOL"
+      custom_model_data: 0
+      name: "§a§lSend Mail"
+      lore:
+        - "§7To: §f{recipient}"
+        - "§7Server: §f{server}"
+        - ""
+        - "§aClick to send!"
+      slot: 48
+    message_button:
+      material: "WRITABLE_BOOK"
+      custom_model_data: 0
+      name: "§e§lAdd Message"
+      lore:
+        - "§7Click to add a message"
+        - "§7to your mail package"
+      slot: 49
+    cancel_button:
+      material: "RED_WOOL"
+      custom_model_data: 0
+      name: "§c§lCancel"
+      lore: ["§7Click to cancel and return items"]
+      slot: 45
+    info_item:
+      material: "BOOK"
+      custom_model_data: 0
+      name: "§6§lMail Information"
+      lore:
+        - "§7Place items in the slots to send them"
+        - "§7to §f{recipient} §7on §f{server}"
+        - ""
+        - "§7Maximum items: §f{max_items}"
+
+# Message system
+messages:
+  enabled: true
+  max_length: 255
+  chat_input:
+    timeout: 30  # seconds
+    prompt: "§eType your message (or 'cancel' to abort):"
+    accept_prompt: "§aType 'confirm' to send or 'cancel' to abort:"
+    cancelled: "§cMessage cancelled."
+    confirmed: "§aMessage added to mail!"
+    timeout_message: "§cMessage input timed out."

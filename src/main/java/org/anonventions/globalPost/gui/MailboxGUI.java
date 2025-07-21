@@ -2,6 +2,7 @@ package org.anonventions.globalPost.gui;
 
 import org.anonventions.globalPost.GlobalPost;
 import org.anonventions.globalPost.models.Mail;
+import org.anonventions.globalPost.utils.ItemBuilder;
 import org.bukkit.Bukkit;
 import org.bukkit.Material;
 import org.bukkit.entity.Player;
@@ -11,7 +12,9 @@ import org.bukkit.event.inventory.InventoryClickEvent;
 import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
+import org.bukkit.inventory.meta.SkullMeta;
 
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -20,12 +23,16 @@ public class MailboxGUI implements Listener {
     private final GlobalPost plugin;
     private final Player player;
     private final Inventory inventory;
-    private List<Mail> mails;
+    private List<Mail> allMails = new ArrayList<>();
+    private PaginationHelper pagination;
+    private final SimpleDateFormat dateFormat = new SimpleDateFormat("MMM dd, yyyy HH:mm");
 
     public MailboxGUI(GlobalPost plugin, Player player) {
         this.plugin = plugin;
         this.player = player;
-        this.inventory = Bukkit.createInventory(null, 54, "§6§lMailbox");
+        
+        String title = plugin.getConfigManager().getMailboxTitle();
+        this.inventory = Bukkit.createInventory(null, 54, title);
 
         plugin.getServer().getPluginManager().registerEvents(this, plugin);
         loadMails();
@@ -33,67 +40,177 @@ public class MailboxGUI implements Listener {
 
     private void loadMails() {
         plugin.getMailboxManager().getPlayerMails(player.getUniqueId()).thenAccept(mailList -> {
-            this.mails = mailList;
+            this.allMails = mailList;
+            this.pagination = new PaginationHelper(allMails, plugin.getConfigManager().getContentSlots().size());
             Bukkit.getScheduler().runTask(plugin, this::updateInventory);
         });
     }
 
     private void updateInventory() {
         inventory.clear();
-
-        if (mails.isEmpty()) {
-            ItemStack noMail = new ItemStack(Material.BARRIER);
-            ItemMeta meta = noMail.getItemMeta();
-            meta.setDisplayName("§cNo mail");
-            meta.setLore(List.of("§7You have no unread mail."));
-            noMail.setItemMeta(meta);
+        
+        // Set border items
+        setupBorder();
+        
+        // Add player head
+        setupPlayerHead();
+        
+        // Add navigation items
+        setupNavigationItems();
+        
+        // Add mail items
+        setupMailItems();
+        
+        // Add pagination if needed
+        setupPagination();
+    }
+    
+    private void setupBorder() {
+        ItemStack border = ItemBuilder.createItem(
+            plugin.getConfigManager().getBorderMaterial(),
+            plugin.getConfigManager().getBorderCustomModelData(),
+            plugin.getConfigManager().getBorderName(),
+            plugin.getConfigManager().getBorderLore()
+        );
+        
+        // Set border items (slots 0-8, 9, 17, 18, 26, 27, 35, 36, 44, 45-53)
+        for (int i = 0; i < 54; i++) {
+            if (i < 9 || i >= 45 || i % 9 == 0 || i % 9 == 8) {
+                // Skip specific slots that have special functions
+                if (!isSpecialSlot(i)) {
+                    inventory.setItem(i, border);
+                }
+            }
+        }
+    }
+    
+    private boolean isSpecialSlot(int slot) {
+        List<Integer> contentSlots = plugin.getConfigManager().getContentSlots();
+        List<Integer> paginationSlots = plugin.getConfigManager().getPaginationSlots();
+        
+        return slot == plugin.getConfigManager().getPlayerHeadSlot() ||
+               slot == plugin.getConfigManager().getRefreshSlot() ||
+               slot == plugin.getConfigManager().getSendMailSlot() ||
+               contentSlots.contains(slot) ||
+               paginationSlots.contains(slot);
+    }
+    
+    private void setupPlayerHead() {
+        ItemStack playerHead = new ItemStack(Material.PLAYER_HEAD);
+        SkullMeta meta = (SkullMeta) playerHead.getItemMeta();
+        
+        if (meta != null) {
+            meta.setOwningPlayer(player);
+            meta.setDisplayName("§6" + player.getName());
+            meta.setLore(List.of("§7Your mailbox", "§7Total mails: §f" + allMails.size()));
+            playerHead.setItemMeta(meta);
+        }
+        
+        inventory.setItem(plugin.getConfigManager().getPlayerHeadSlot(), playerHead);
+    }
+    
+    private void setupNavigationItems() {
+        // Refresh button
+        ItemStack refresh = ItemBuilder.createItem(
+            plugin.getConfigManager().getRefreshMaterial(),
+            plugin.getConfigManager().getRefreshCustomModelData(),
+            plugin.getConfigManager().getRefreshName(),
+            plugin.getConfigManager().getRefreshLore()
+        );
+        inventory.setItem(plugin.getConfigManager().getRefreshSlot(), refresh);
+        
+        // Send mail button
+        ItemStack sendMail = ItemBuilder.createItem(
+            plugin.getConfigManager().getSendMailMaterial(),
+            plugin.getConfigManager().getSendMailCustomModelData(),
+            plugin.getConfigManager().getSendMailName(),
+            plugin.getConfigManager().getSendMailLore()
+        );
+        inventory.setItem(plugin.getConfigManager().getSendMailSlot(), sendMail);
+    }
+    
+    private void setupMailItems() {
+        if (allMails.isEmpty()) {
+            // Show "no mail" message
+            ItemStack noMail = ItemBuilder.createItem("BARRIER", 0, "§cNo mail", List.of("§7You have no unread mail."));
             inventory.setItem(22, noMail);
             return;
         }
-
-        for (int i = 0; i < Math.min(mails.size(), 45); i++) {
-            Mail mail = mails.get(i);
-            ItemStack mailItem = new ItemStack(Material.PAPER);
-            ItemMeta meta = mailItem.getItemMeta();
-
-            meta.setDisplayName("§6Mail from " + mail.getSenderName());
-
-            List<String> lore = new ArrayList<>();
-            lore.add("§7From: §f" + mail.getSenderName());
-            lore.add("§7Server: §f" + mail.getSourceServer());
-            lore.add("§7Items: §f" + mail.getItems().size());
-
-            if (mail.getMessage() != null && !mail.getMessage().trim().isEmpty()) {
-                lore.add("§7Message: §f" + mail.getMessage());
-            }
-
-            lore.add("");
-            lore.add("§aClick to collect!");
-
-            meta.setLore(lore);
-            mailItem.setItemMeta(meta);
-
-            inventory.setItem(i, mailItem);
+        
+        List<Mail> currentPageMails = pagination.getCurrentPageMails();
+        List<Integer> contentSlots = plugin.getConfigManager().getContentSlots();
+        
+        for (int i = 0; i < currentPageMails.size() && i < contentSlots.size(); i++) {
+            Mail mail = currentPageMails.get(i);
+            ItemStack mailItem = createMailItem(mail);
+            inventory.setItem(contentSlots.get(i), mailItem);
         }
-
-        // Add navigation and utility items
-        ItemStack sendMail = new ItemStack(Material.WRITABLE_BOOK);
-        ItemMeta sendMeta = sendMail.getItemMeta();
-        sendMeta.setDisplayName("§aSend Mail");
-        sendMeta.setLore(List.of("§7Click to send mail to another server"));
-        sendMail.setItemMeta(sendMeta);
-        inventory.setItem(49, sendMail);
-
-        ItemStack refresh = new ItemStack(Material.COMPASS);
-        ItemMeta refreshMeta = refresh.getItemMeta();
-        refreshMeta.setDisplayName("§bRefresh");
-        refreshMeta.setLore(List.of("§7Click to refresh your mailbox"));
-        refresh.setItemMeta(refreshMeta);
-        inventory.setItem(53, refresh);
+    }
+    
+    private ItemStack createMailItem(Mail mail) {
+        String timeStr = mail.getSentAt() != null ? dateFormat.format(mail.getSentAt()) : "Unknown";
+        String message = mail.getMessage();
+        
+        // Get mail item config from config.yml
+        String name = ItemBuilder.replacePlaceholders(
+            "§6Mail from {sender}", 
+            mail.getSenderName(), 
+            mail.getSourceServer(), 
+            timeStr, 
+            mail.getItems().size(), 
+            message
+        );
+        
+        List<String> baseLore = List.of(
+            "§7From: §f{sender}",
+            "§7Server: §f{server}",
+            "§7Time: §f{time}",
+            "§7Items: §f{items}",
+            "§7Message: §f{message}",
+            "",
+            "§aClick to collect!"
+        );
+        
+        List<String> lore = ItemBuilder.replacePlaceholders(
+            baseLore, 
+            mail.getSenderName(), 
+            mail.getSourceServer(), 
+            timeStr, 
+            mail.getItems().size(), 
+            message
+        );
+        
+        return ItemBuilder.createItem("PAPER", 0, name, lore);
+    }
+    
+    private void setupPagination() {
+        if (pagination.getTotalPages() <= 1) {
+            return; // No pagination needed
+        }
+        
+        // Previous page button
+        if (pagination.hasPreviousPage()) {
+            ItemStack prevPage = ItemBuilder.createItem("ARROW", 0, "§7« Previous Page", 
+                List.of("§8Click to go to previous page", "§8Page " + (pagination.getCurrentPage()) + "/" + pagination.getTotalPages()));
+            inventory.setItem(46, prevPage);
+        }
+        
+        // Next page button
+        if (pagination.hasNextPage()) {
+            ItemStack nextPage = ItemBuilder.createItem("ARROW", 0, "§7Next Page »", 
+                List.of("§8Click to go to next page", "§8Page " + (pagination.getCurrentPage() + 2) + "/" + pagination.getTotalPages()));
+            inventory.setItem(52, nextPage);
+        }
+        
+        // Page info
+        ItemStack pageInfo = ItemBuilder.createItem("BOOK", 0, "§6Page " + (pagination.getCurrentPage() + 1), 
+            List.of("§7Total pages: §f" + pagination.getTotalPages(), "§7Total mails: §f" + pagination.getTotalMails()));
+        inventory.setItem(49, pageInfo);
     }
 
     public void open() {
         player.openInventory(inventory);
+        plugin.getSoundManager().playGuiOpenSound(player);
     }
 
     @EventHandler
@@ -112,21 +229,41 @@ public class MailboxGUI implements Listener {
 
         int slot = event.getSlot();
 
-        if (slot == 49) { // Send mail
-            clicker.closeInventory();
-            // Open server selection GUI or command
-            clicker.sendMessage("§aUse /post send <server> [player] to send mail!");
-            return;
-        }
-
-        if (slot == 53) { // Refresh
+        // Handle refresh
+        if (slot == plugin.getConfigManager().getRefreshSlot()) {
             loadMails();
             return;
         }
 
-        if (slot < mails.size()) {
-            Mail mail = mails.get(slot);
-            collectMail(mail, clicker);
+        // Handle send mail
+        if (slot == plugin.getConfigManager().getSendMailSlot()) {
+            clicker.closeInventory();
+            clicker.sendMessage("§aUse /post send <server> [player] to send mail!");
+            return;
+        }
+
+        // Handle pagination
+        if (slot == 46 && pagination.hasPreviousPage()) {
+            pagination.previousPage();
+            updateInventory();
+            return;
+        }
+        
+        if (slot == 52 && pagination.hasNextPage()) {
+            pagination.nextPage();
+            updateInventory();
+            return;
+        }
+
+        // Handle mail collection
+        List<Integer> contentSlots = plugin.getConfigManager().getContentSlots();
+        int mailIndex = contentSlots.indexOf(slot);
+        if (mailIndex != -1) {
+            List<Mail> currentPageMails = pagination.getCurrentPageMails();
+            if (mailIndex < currentPageMails.size()) {
+                Mail mail = currentPageMails.get(mailIndex);
+                collectMail(mail, clicker);
+            }
         }
     }
 
@@ -156,6 +293,7 @@ public class MailboxGUI implements Listener {
             if (success) {
                 Bukkit.getScheduler().runTask(plugin, () -> {
                     player.sendMessage("§aMail collected from " + mail.getSenderName() + "!");
+                    plugin.getSoundManager().playMailReceiveSound(player);
                     loadMails(); // Refresh the GUI
                 });
             }
