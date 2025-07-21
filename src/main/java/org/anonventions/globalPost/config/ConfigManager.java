@@ -57,9 +57,14 @@ public class ConfigManager {
                 "BLUE_SHULKER_BOX","BROWN_SHULKER_BOX","GREEN_SHULKER_BOX","RED_SHULKER_BOX",
                 "BLACK_SHULKER_BOX"));
 
+        config.addDefault("blacklist.custom_items.display_names", Arrays.asList("§cAdmin Item", "§4[BANNED]"));
+        config.addDefault("blacklist.custom_items.lore_contains", Arrays.asList("ADMIN ONLY", "NOT TRADEABLE"));
+        config.addDefault("blacklist.custom_items.nbt_keys", Arrays.asList("CustomAdminData", "UntradableItem"));
+
         config.addDefault("settings.max_items_per_mail",   27);
         config.addDefault("settings.max_mails_per_player", 50);
         config.addDefault("settings.mail_expiry_days",     30);
+        config.addDefault("settings.invisible_borders",    false);
 
         config.options().copyDefaults(true);
     }
@@ -115,7 +120,11 @@ public class ConfigManager {
     }
 
     public List<String> getBlacklistedItems() { return config.getStringList("blacklist.items"); }
+    public List<String> getBlacklistedDisplayNames() { return config.getStringList("blacklist.custom_items.display_names"); }
+    public List<String> getBlacklistedLoreContains() { return config.getStringList("blacklist.custom_items.lore_contains"); }
+    public List<String> getBlacklistedNBTKeys() { return config.getStringList("blacklist.custom_items.nbt_keys"); }
     public int  getMaxItemsPerMail()          { return config.getInt("settings.max_items_per_mail"); }
     public int  getMaxMailsPerPlayer()        { return config.getInt("settings.max_mails_per_player"); }
     public int  getMailExpiryDays()           { return config.getInt("settings.mail_expiry_days"); }
+    public boolean hasInvisibleBorders()      { return config.getBoolean("settings.invisible_borders"); }
 }
