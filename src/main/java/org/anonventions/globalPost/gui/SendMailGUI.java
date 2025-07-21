@@ -13,7 +13,9 @@ import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
 
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 import java.util.UUID;
 
 public class SendMailGUI implements Listener {
@@ -25,6 +27,7 @@ public class SendMailGUI implements Listener {
     private final Inventory inventory;
     private boolean isProcessing = false;
     private final boolean invisibleBorders;
+    private final Set<ItemStack> trackedItems = new HashSet<>();
 
     public SendMailGUI(GlobalPost plugin, Player player, String destinationServer, String recipientName) {
         this.plugin = plugin;
@@ -115,6 +118,25 @@ public class SendMailGUI implements Listener {
         return 4; // Same for both modes
     }
 
+    private boolean isItemAlreadyTracked(ItemStack item) {
+        if (item == null) return false;
+        
+        // Check global tracking first
+        if (!plugin.trackItemForMail(player.getUniqueId(), item)) {
+            return true; // Already tracked globally
+        }
+        
+        // Check if an equivalent item is already in the local tracked set
+        for (ItemStack trackedItem : trackedItems) {
+            if (trackedItem.isSimilar(item)) {
+                // Release the global tracking since we found a local duplicate
+                plugin.releaseItemTracking(player.getUniqueId(), item);
+                return true;
+            }
+        }
+        return false;
+    }
+
     public void open() {
         player.openInventory(inventory);
     }
@@ -138,17 +160,39 @@ public class SendMailGUI implements Listener {
                 // Handle shift click from player inventory (including hotbar)
                 ItemStack item = event.getCurrentItem();
                 if (item != null && !plugin.getBlacklistManager().isBlacklisted(item)) {
-                    // Find empty slot in mail area
-                    for (int i = 0; i < 54; i++) {
-                        if (isMailSlot(i) && (inventory.getItem(i) == null || inventory.getItem(i).getType() == Material.AIR)) {
-                            inventory.setItem(i, item.clone());
-                            item.setAmount(0); // Remove from player inventory to prevent duplication
-                            break;
+                    // Check if this exact item is already being tracked to prevent duplication
+                    if (!isItemAlreadyTracked(item)) {
+                        // Find empty slot in mail area
+                        for (int i = 0; i < 54; i++) {
+                            if (isMailSlot(i) && (inventory.getItem(i) == null || inventory.getItem(i).getType() == Material.AIR)) {
+                                ItemStack clonedItem = item.clone();
+                                inventory.setItem(i, clonedItem);
+                                trackedItems.add(clonedItem); // Track the cloned item
+                                item.setAmount(0); // Remove from player inventory to prevent duplication
+                                break;
+                            }
                         }
                     }
                 }
                 event.setCancelled(true);
                 return;
+            }
+
+            // Handle direct placement
+            if (event.getAction().toString().contains("PLACE")) {
+                ItemStack itemToPlace = event.getCursor();
+                if (itemToPlace != null && !plugin.getBlacklistManager().isBlacklisted(itemToPlace)) {
+                    if (!isItemAlreadyTracked(itemToPlace)) {
+                        ItemStack clonedItem = itemToPlace.clone();
+                        trackedItems.add(clonedItem);
+                        // Allow the placement to continue normally
+                        return;
+                    } else {
+                        event.setCancelled(true);
+                        player.sendMessage("§cThis item is already being sent!");
+                        return;
+                    }
+                }
             }
 
             if (clicked != null && plugin.getBlacklistManager().isBlacklisted(clicked)) {
@@ -237,12 +281,18 @@ public class SendMailGUI implements Listener {
                     if (success) {
                         player.sendMessage("§aMail sent successfully to " + recipientName + " on " + destinationServer + "!");
 
-                        // Clear the mail slots
+                        // Clear the mail slots and tracked items
                         for (int i = 0; i < 54; i++) {
                             if (isMailSlot(i)) {
+                                ItemStack item = inventory.getItem(i);
+                                if (item != null) {
+                                    plugin.releaseItemTracking(player.getUniqueId(), item);
+                                }
                                 inventory.setItem(i, null);
                             }
                         }
+                        trackedItems.clear();
+                        plugin.clearPlayerTracking(player.getUniqueId());
 
                         player.closeInventory();
                     } else {
@@ -292,8 +342,15 @@ public class SendMailGUI implements Listener {
                         player.getWorld().dropItem(player.getLocation(), item);
                         player.sendMessage("§eDropped " + item.getType().name() + " because your inventory is full!");
                     }
+                    // Release from tracking
+                    plugin.releaseItemTracking(player.getUniqueId(), item);
+                    trackedItems.remove(item);
                 }
             }
         }
+        // Clear all tracked items when closing
+        trackedItems.clear();
+        // Also clear any remaining global tracking for this player
+        plugin.clearPlayerTracking(player.getUniqueId());
     }
 }

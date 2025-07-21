@@ -8,6 +8,7 @@ import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 import org.bukkit.event.player.PlayerJoinEvent;
+import org.bukkit.event.player.PlayerQuitEvent;
 
 /**
  * Notifies players of unread mail on join.
@@ -27,5 +28,12 @@ public class PlayerListener implements Listener {
                         () -> p.sendMessage("§6[Mail] §aYou have " + cnt + " unread mail(s)! Use /post to check."),
                         20L);
         });
+    }
+
+    @EventHandler
+    public void onPlayerQuit(PlayerQuitEvent e) {
+        Player p = e.getPlayer();
+        // Clear any item tracking when player disconnects to prevent memory leaks
+        plugin.clearPlayerTracking(p.getUniqueId());
     }
 }
