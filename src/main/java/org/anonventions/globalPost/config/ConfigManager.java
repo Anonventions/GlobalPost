@@ -108,10 +108,45 @@ public class ConfigManager {
 
     /** Allowed destination list (canonical, de‑duplicated). */
     public List<String> getAllowedDestinations() {
-        return config.getStringList("channels." + getServerName()).stream()
+        List<String> destinations = config.getStringList("channels." + getServerName()).stream()
                 .map(this::normalised)
                 .distinct()
                 .toList();
+        
+        // If no specific channels are configured for this server
+        if (destinations.isEmpty()) {
+            // Check if channels section exists
+            if (config.isConfigurationSection("channels")) {
+                Set<String> allChannelKeys = config.getConfigurationSection("channels").getKeys(false);
+                
+                // If there are no channel configurations at all, allow sending to self (single-server mode)
+                if (allChannelKeys.isEmpty()) {
+                    return List.of(getServerName());
+                }
+                
+                // Check if this is a single-server setup by seeing if all configured servers 
+                // point to the same server (meaning it's probably a hub or single-server setup)
+                Set<String> allDestinations = new HashSet<>();
+                for (String key : allChannelKeys) {
+                    List<String> serverDests = config.getStringList("channels." + key);
+                    allDestinations.addAll(serverDests.stream().map(this::normalised).toList());
+                }
+                
+                // If this server appears as a destination but isn't configured to send anywhere,
+                // it might be a legitimate single-server or hub setup - allow self-sending
+                if (allDestinations.contains(getServerName())) {
+                    return List.of(getServerName());
+                }
+                
+                // Otherwise, return empty list (strict multi-server mode where this server has no outgoing channels)
+                return Collections.emptyList();
+            } else {
+                // No channels section exists - single server mode, allow sending to self
+                return List.of(getServerName());
+            }
+        }
+        
+        return destinations;
     }
 
     public List<String> getBlacklistedItems() { return config.getStringList("blacklist.items"); }
