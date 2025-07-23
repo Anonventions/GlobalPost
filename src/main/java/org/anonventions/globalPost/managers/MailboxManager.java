@@ -41,8 +41,24 @@ public class MailboxManager {
                              String dest, List<ItemStack> items, String msg) {
 
         dest = canonical(dest);
-        if (!plugin.getConfigManager().getAllowedDestinations().contains(dest)) {
-            plugin.getLogger().warning("Invalid destination: " + dest); return false;
+        String currentServer = plugin.getConfigManager().getServerName();
+        
+        // If local mail is enabled and destination is the same server, allow it
+        boolean isLocalMail = plugin.getConfigManager().isLocalMailEnabled() && 
+                             (dest.equals(currentServer) || dest.isEmpty());
+        
+        // If MySQL is not configured, only allow local mail
+        boolean mysqlConfigured = "mysql".equalsIgnoreCase(plugin.getConfigManager().getDatabaseType());
+        
+        if (!mysqlConfigured && !isLocalMail) {
+            plugin.getLogger().warning("Cross-server mail disabled - MySQL not configured. Use local mail instead.");
+            return false;
+        }
+        
+        // For configured MySQL setups, check allowed destinations
+        if (mysqlConfigured && !isLocalMail && !plugin.getConfigManager().getAllowedDestinations().contains(dest)) {
+            plugin.getLogger().warning("Invalid destination: " + dest); 
+            return false;
         }
 
         for (ItemStack it : items)
@@ -50,10 +66,13 @@ public class MailboxManager {
                 plugin.getLogger().warning("Blacklisted: " + it.getType()); return false;
             }
 
+        // For local mail, set destination to current server
+        String finalDest = isLocalMail ? currentServer : dest;
+
         Mail mail = new Mail(
                 senderUUID, senderName,
                 getRecipientUUID(recipientName), recipientName,
-                plugin.getConfigManager().getServerName(), dest,
+                currentServer, finalDest,
                 items, msg);
 
         return plugin.getDatabaseManager().saveMail(mail).join();
@@ -78,6 +97,39 @@ public class MailboxManager {
     }
 
     /*------------------------------------------------------------------------*/
+    /**
+     * Check if local mail is supported
+     */
+    public boolean isLocalMailSupported() {
+        return plugin.getConfigManager().isLocalMailEnabled();
+    }
+    
+    /**
+     * Check if cross-server mail is available (MySQL configured)
+     */
+    public boolean isCrossServerMailAvailable() {
+        return "mysql".equalsIgnoreCase(plugin.getConfigManager().getDatabaseType());
+    }
+    
+    /**
+     * Get available destination servers for mail
+     */
+    public List<String> getAvailableDestinations() {
+        List<String> destinations = new ArrayList<>();
+        
+        // Add local server if local mail is enabled
+        if (isLocalMailSupported()) {
+            destinations.add(plugin.getConfigManager().getServerName());
+        }
+        
+        // Add configured destinations if MySQL is available
+        if (isCrossServerMailAvailable()) {
+            destinations.addAll(plugin.getConfigManager().getAllowedDestinations());
+        }
+        
+        return destinations;
+    }
+
     private UUID getRecipientUUID(String playerName) {
         Player online = Bukkit.getPlayer(playerName);
         if (online != null) return online.getUniqueId();

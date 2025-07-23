@@ -3,9 +3,11 @@ package org.anonventions.globalPost;
 import org.anonventions.globalPost.commands.PostCommand;
 import org.anonventions.globalPost.config.ConfigManager;
 import org.anonventions.globalPost.database.DatabaseManager;
+import org.anonventions.globalPost.gui.MessageInputHandler;
 import org.anonventions.globalPost.listeners.PlayerListener;
 import org.anonventions.globalPost.managers.ItemBlacklistManager;
 import org.anonventions.globalPost.managers.MailboxManager;
+import org.anonventions.globalPost.managers.SoundManager;
 import org.anonventions.globalPost.messaging.PluginMessageHandler;
 import org.bukkit.plugin.java.JavaPlugin;
 
@@ -19,6 +21,8 @@ public final class GlobalPost extends JavaPlugin {
     private MailboxManager mailboxManager;
     private ItemBlacklistManager blacklistManager;
     private PluginMessageHandler messageHandler;
+    private SoundManager soundManager;
+    private MessageInputHandler messageInputHandler;
 
     @Override
     public void onEnable() {
@@ -39,6 +43,8 @@ public final class GlobalPost extends JavaPlugin {
         // Initialize managers
         blacklistManager = new ItemBlacklistManager(this);
         mailboxManager = new MailboxManager(this);
+        soundManager = new SoundManager(this);
+        messageInputHandler = new MessageInputHandler(this);
 
         // Initialize plugin messaging
         messageHandler = new PluginMessageHandler(this);
@@ -89,5 +95,13 @@ public final class GlobalPost extends JavaPlugin {
 
     public PluginMessageHandler getMessageHandler() {
         return messageHandler;
+    }
+
+    public SoundManager getSoundManager() {
+        return soundManager;
+    }
+
+    public MessageInputHandler getMessageInputHandler() {
+        return messageInputHandler;
     }
 }

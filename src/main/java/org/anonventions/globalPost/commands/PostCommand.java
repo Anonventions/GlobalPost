@@ -33,14 +33,29 @@ public class PostCommand implements CommandExecutor, TabCompleter {
         switch (args[0].toLowerCase(Locale.ROOT)) {
 
             case "send" -> {
-                if (args.length < 2) { p.sendMessage("§cUsage: /post send <server> [player]"); return true; }
+                if (args.length < 2) { 
+                    p.sendMessage("§cUsage: /post send <server> [player]"); 
+                    p.sendMessage("§7Available servers: " + String.join(", ", plugin.getMailboxManager().getAvailableDestinations()));
+                    return true; 
+                }
 
                 String dest       = plugin.getConfigManager().normalised(args[1]);
                 String recipient  = args.length > 2 ? args[2] : p.getName();
-
-                if (!plugin.getConfigManager().getAllowedDestinations().contains(dest)) {
-                    p.sendMessage("§cInvalid destination server: " + dest); return true;
+                
+                // Check if destination is valid
+                List<String> availableDestinations = plugin.getMailboxManager().getAvailableDestinations();
+                if (!availableDestinations.contains(dest)) {
+                    p.sendMessage("§cInvalid destination server: " + dest); 
+                    p.sendMessage("§7Available servers: " + String.join(", ", availableDestinations));
+                    return true;
                 }
+                
+                // Special handling for local mail
+                String currentServer = plugin.getConfigManager().getServerName();
+                if (dest.equals(currentServer) || dest.equals("local")) {
+                    dest = currentServer; // Ensure consistent naming for local mail
+                }
+                
                 new SendMailGUI(plugin, p, dest, recipient).open();
             }
 
@@ -65,7 +80,7 @@ public class PostCommand implements CommandExecutor, TabCompleter {
     public List<String> onTabComplete(CommandSender s, Command c, String a, String[] args) {
         if (args.length == 1) return List.of("send", "check", "reload");
         if (args.length == 2 && args[0].equalsIgnoreCase("send"))
-            return plugin.getConfigManager().getAllowedDestinations();
+            return plugin.getMailboxManager().getAvailableDestinations();
         return Collections.emptyList();
     }
 }
