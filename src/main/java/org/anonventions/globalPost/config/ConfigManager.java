@@ -47,8 +47,12 @@ public class ConfigManager {
 
         config.addDefault("server.name", "server1");
 
-        config.addDefault("channels.server1", Arrays.asList("server2", "server3"));
-        config.addDefault("channels.server2", Collections.singletonList("server1"));
+        // Only set default channels if this is a fresh config
+        // This allows single-server setups to work without channel configuration
+        if (!config.contains("channels")) {
+            config.addDefault("channels.server1", Arrays.asList("server2", "server3"));
+            config.addDefault("channels.server2", Collections.singletonList("server1"));
+        }
 
         config.addDefault("blacklist.items", Arrays.asList(
                 "SHULKER_BOX","WHITE_SHULKER_BOX","ORANGE_SHULKER_BOX","MAGENTA_SHULKER_BOX",
@@ -108,10 +112,50 @@ public class ConfigManager {
 
     /** Allowed destination list (canonical, de‑duplicated). */
     public List<String> getAllowedDestinations() {
-        return config.getStringList("channels." + getServerName()).stream()
+        List<String> destinations = config.getStringList("channels." + getServerName()).stream()
                 .map(this::normalised)
                 .distinct()
                 .toList();
+        
+        // If no specific channels are configured for this server
+        if (destinations.isEmpty()) {
+            // Check if channels section exists
+            if (config.isConfigurationSection("channels")) {
+                Set<String> allChannelKeys = config.getConfigurationSection("channels").getKeys(false);
+                
+                // If there are no channel configurations at all, allow sending to self (single-server mode)
+                if (allChannelKeys.isEmpty()) {
+                    plugin.getLogger().info("No channel configurations found, enabling single-server mode for: " + getServerName());
+                    return List.of(getServerName());
+                }
+                
+                // Check if this is a single-server setup by seeing if all configured servers 
+                // point to the same server (meaning it's probably a hub or single-server setup)
+                Set<String> allDestinations = new HashSet<>();
+                for (String key : allChannelKeys) {
+                    List<String> serverDests = config.getStringList("channels." + key);
+                    allDestinations.addAll(serverDests.stream().map(this::normalised).toList());
+                }
+                
+                // If this server appears as a destination but isn't configured to send anywhere,
+                // it might be a legitimate single-server or hub setup - allow self-sending
+                if (allDestinations.contains(getServerName())) {
+                    plugin.getLogger().info("Server " + getServerName() + " is a mail destination but has no outgoing channels, enabling self-sending");
+                    return List.of(getServerName());
+                }
+                
+                // Otherwise, return empty list (strict multi-server mode where this server has no outgoing channels)
+                plugin.getLogger().warning("Server " + getServerName() + " has no configured mail channels and is not a destination. Mail sending disabled.");
+                return Collections.emptyList();
+            } else {
+                // No channels section exists - single server mode, allow sending to self
+                plugin.getLogger().info("No channels section found, enabling single-server mode for: " + getServerName());
+                return List.of(getServerName());
+            }
+        }
+        
+        plugin.getLogger().info("Server " + getServerName() + " can send mail to: " + destinations);
+        return destinations;
     }
 
     public List<String> getBlacklistedItems() { return config.getStringList("blacklist.items"); }
