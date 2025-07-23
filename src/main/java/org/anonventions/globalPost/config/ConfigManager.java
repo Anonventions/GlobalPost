@@ -47,8 +47,12 @@ public class ConfigManager {
 
         config.addDefault("server.name", "server1");
 
-        config.addDefault("channels.server1", Arrays.asList("server2", "server3"));
-        config.addDefault("channels.server2", Collections.singletonList("server1"));
+        // Only set default channels if this is a fresh config
+        // This allows single-server setups to work without channel configuration
+        if (!config.contains("channels")) {
+            config.addDefault("channels.server1", Arrays.asList("server2", "server3"));
+            config.addDefault("channels.server2", Collections.singletonList("server1"));
+        }
 
         config.addDefault("blacklist.items", Arrays.asList(
                 "SHULKER_BOX","WHITE_SHULKER_BOX","ORANGE_SHULKER_BOX","MAGENTA_SHULKER_BOX",
@@ -121,6 +125,7 @@ public class ConfigManager {
                 
                 // If there are no channel configurations at all, allow sending to self (single-server mode)
                 if (allChannelKeys.isEmpty()) {
+                    plugin.getLogger().info("No channel configurations found, enabling single-server mode for: " + getServerName());
                     return List.of(getServerName());
                 }
                 
@@ -135,17 +140,21 @@ public class ConfigManager {
                 // If this server appears as a destination but isn't configured to send anywhere,
                 // it might be a legitimate single-server or hub setup - allow self-sending
                 if (allDestinations.contains(getServerName())) {
+                    plugin.getLogger().info("Server " + getServerName() + " is a mail destination but has no outgoing channels, enabling self-sending");
                     return List.of(getServerName());
                 }
                 
                 // Otherwise, return empty list (strict multi-server mode where this server has no outgoing channels)
+                plugin.getLogger().warning("Server " + getServerName() + " has no configured mail channels and is not a destination. Mail sending disabled.");
                 return Collections.emptyList();
             } else {
                 // No channels section exists - single server mode, allow sending to self
+                plugin.getLogger().info("No channels section found, enabling single-server mode for: " + getServerName());
                 return List.of(getServerName());
             }
         }
         
+        plugin.getLogger().info("Server " + getServerName() + " can send mail to: " + destinations);
         return destinations;
     }
 
